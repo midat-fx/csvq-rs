@@ -48,6 +48,9 @@ backlog for a behaviour-changing v2.
 
 Command-line cases frozen alongside: `cli-no-args`, `cli-normalize-in-place`,
 `cli-audit-dir-trailing-slash` (macOS `find` keeps `d/` as `d/a.csv`).
+Long-record cases: `edge-100k-field-audit` and `edge-100k-field-stats`, a
+CRLF file whose duplicated row holds a 100 KB quoted field with embedded
+quotes, commas and about 14,000 newlines.
 
 ## Deliberate differences (not preserved)
 
