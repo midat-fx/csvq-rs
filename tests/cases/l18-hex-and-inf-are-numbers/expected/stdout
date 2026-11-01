@@ -1,0 +1,9 @@
+CSV SCHEMA VALIDATION
+=====================
+File:   in.csv
+Schema: s.schema
+Rules:  1   Data rows: 3
+
+  row 1: column 'n' value 5 < min 16
+
+FAIL: 1 violation(s)

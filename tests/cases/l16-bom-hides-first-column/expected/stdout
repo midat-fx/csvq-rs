@@ -1,0 +1,9 @@
+CSV SCHEMA VALIDATION
+=====================
+File:   in.csv
+Schema: s.schema
+Rules:  1   Data rows: 1
+
+  schema warning: column 'id' not found in header
+
+OK: no violations

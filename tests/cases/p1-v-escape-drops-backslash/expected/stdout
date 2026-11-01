@@ -1,0 +1,24 @@
+CSV COLUMN STATISTICS
+=====================
+File: in.csv
+Rows: 1 (excluding header)
+
+Column 1: a
+  type:      int
+  non-null:  1
+  nulls:     0 (0.0%)
+  distinct:  1
+  min:       1
+  max:       1
+  mean:      1.0000
+  top values: 1 (1)
+
+Column 2: b
+  type:      int
+  non-null:  1
+  nulls:     0 (0.0%)
+  distinct:  1
+  min:       2
+  max:       2
+  mean:      2.0000
+  top values: 2 (1)

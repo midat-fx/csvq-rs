@@ -1,0 +1,11 @@
+CSV DATA QUALITY - ANALYSIS REPORT
+=================================
+
+File:        t.csv
+  rows:      2 (excluding header)
+  columns:   1
+  delimiter: comma
+  crlf:      no (0 line(s))
+  ragged:    0 row(s)
+  bytes:     6
+  empty:     no

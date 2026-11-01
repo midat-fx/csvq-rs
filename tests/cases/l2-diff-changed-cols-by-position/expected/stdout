@@ -1,0 +1,5 @@
+CSV DIFF (key: id)
+======================
+~ changed: 1 | b=x->y; a=y->x
+
+Summary: 0 added, 1 changed, 0 removed

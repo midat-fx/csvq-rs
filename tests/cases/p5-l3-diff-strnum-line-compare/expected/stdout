@@ -1,0 +1,8 @@
+CSV DIFF (key: h)
+======================
++ added:   -inf | -inf
+- removed: 1 | 1
++ added:   1.0 | 1.0
+- removed: nan | nan
+
+Summary: 2 added, 0 changed, 2 removed

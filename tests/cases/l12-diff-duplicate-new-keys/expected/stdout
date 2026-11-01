@@ -1,0 +1,7 @@
+CSV DIFF (key: k)
+======================
+- removed: a | a,1
++ added:   b | b,1
++ added:   b | b,2
+
+Summary: 2 added, 0 changed, 1 removed

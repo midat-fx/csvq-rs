@@ -1,0 +1,8 @@
+CSV DATA QUALITY - DUPLICATES REPORT
+===================================
+
+File: t.csv
+  duplicate groups: 1
+  duplicate rows:   1
+  top duplicated rows (count, row):
+         2  a

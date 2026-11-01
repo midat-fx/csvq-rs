@@ -1,0 +1,7 @@
+CSV DATA QUALITY - DUPLICATES REPORT
+===================================
+
+File: a.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows

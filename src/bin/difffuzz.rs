@@ -55,40 +55,144 @@ struct Case {
 }
 
 const NAMES: &[&str] = &[
-    "id", "name", "email", "age", "score", "city", "amount", "active", "date", "note", "", "a b", "Id", "x,y",
-    "\"q\"", "naïve", "@FILE",
+    "id", "name", "email", "age", "score", "city", "amount", "active", "date", "note", "", "a b",
+    "Id", "x,y", "\"q\"", "naïve", "@FILE",
 ];
 
 const VALUES: &[&[u8]] = &[
-    b"", b"", b"0", b"1", b"2", b"3", b"17", b"18", b"42", b"-5", b"-0", b"007", b"99999999999999999999", b"1.5",
-    b"-.5", b"5.", b".", b"1e5", b"1E-3", b"1.5e3", b"2.675", b"0.125", b"inf", b"nan", b"-inf", b"0x1A", b" 12",
-    b"12 ", b"+3", b"1e400", b"true", b"false", b"TRUE", b"True", b"2024-01-31", b"2024-13-99", b"2024-1-1",
-    b"Almaty", b"Astana", b"\xd0\xa8\xd1\x8b\xd0\xbc\xd0\xba\xd0\xb5\xd0\xbd\xd1\x82", b"na\xc3\xafve",
-    b"\xff\xfe", b"\xef\xbb\xbfbom", b"a@b.c", b"bad-email", b"a@b@c", b"x\x1cy", b"ctl\x01", b"tab\there",
-    b"two words", b"#hash", b"@EOB", b"A", b"B", b"A", b"x", b"colour", b"ab", b"abab", b"\\", b"a.b", b"a\nb",
+    b"",
+    b"",
+    b"0",
+    b"1",
+    b"2",
+    b"3",
+    b"17",
+    b"18",
+    b"42",
+    b"-5",
+    b"-0",
+    b"007",
+    b"99999999999999999999",
+    b"1.5",
+    b"-.5",
+    b"5.",
+    b".",
+    b"1e5",
+    b"1E-3",
+    b"1.5e3",
+    b"2.675",
+    b"0.125",
+    b"inf",
+    b"nan",
+    b"-inf",
+    b"0x1A",
+    b" 12",
+    b"12 ",
+    b"+3",
+    b"1e400",
+    b"true",
+    b"false",
+    b"TRUE",
+    b"True",
+    b"2024-01-31",
+    b"2024-13-99",
+    b"2024-1-1",
+    b"Almaty",
+    b"Astana",
+    b"\xd0\xa8\xd1\x8b\xd0\xbc\xd0\xba\xd0\xb5\xd0\xbd\xd1\x82",
+    b"na\xc3\xafve",
+    b"\xff\xfe",
+    b"\xef\xbb\xbfbom",
+    b"a@b.c",
+    b"bad-email",
+    b"a@b@c",
+    b"x\x1cy",
+    b"ctl\x01",
+    b"tab\there",
+    b"two words",
+    b"#hash",
+    b"@EOB",
+    b"A",
+    b"B",
+    b"A",
+    b"x",
+    b"colour",
+    b"ab",
+    b"abab",
+    b"\\",
+    b"a.b",
+    b"a\nb",
 ];
 
 const DELIMS: &[u8] = b",,,,;\t|";
 
 const MINMAX: &[&str] = &[
-    "0", "1", "18", "-5", "1.5", "1e3", "0x10", "abc", "", "inf", "-inf", "nan", "1e400", "0.1",
-    "100000000000000000000", "3.14159265", ".5", "5.", "1e-7", "-0", "120",
+    "0",
+    "1",
+    "18",
+    "-5",
+    "1.5",
+    "1e3",
+    "0x10",
+    "abc",
+    "",
+    "inf",
+    "-inf",
+    "nan",
+    "1e400",
+    "0.1",
+    "100000000000000000000",
+    "3.14159265",
+    ".5",
+    "5.",
+    "1e-7",
+    "-0",
+    "120",
 ];
 
 const REGEXES: &[&str] = &[
-    "^[^@]+@[^@]+$", "^[0-9]+$", "^[A-Z]", "[a-z]", "^(true|false)$", "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "a.b",
-    "^$", "x*", r"^\d$", r"\.", "[[:alpha:]]+", "[[:digit:][:space:]]", "^[^,]*$", "[]a]", "[a-]", "[z-a]",
-    "colou?r", "^.{3,5}$", "(ab)+", r"\t", r"[\]]", "^[[:upper:]][[:lower:]]*$", "\u{e9}", "[^[:print:]]",
-    r"^-?[0-9]+(\.[0-9]+)?$", "^.$", r"\x41", r"\101",
+    "^[^@]+@[^@]+$",
+    "^[0-9]+$",
+    "^[A-Z]",
+    "[a-z]",
+    "^(true|false)$",
+    "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+    "a.b",
+    "^$",
+    "x*",
+    r"^\d$",
+    r"\.",
+    "[[:alpha:]]+",
+    "[[:digit:][:space:]]",
+    "^[^,]*$",
+    "[]a]",
+    "[a-]",
+    "[z-a]",
+    "colou?r",
+    "^.{3,5}$",
+    "(ab)+",
+    r"\t",
+    r"[\]]",
+    "^[[:upper:]][[:lower:]]*$",
+    "\u{e9}",
+    "[^[:print:]]",
+    r"^-?[0-9]+(\.[0-9]+)?$",
+    "^.$",
+    r"\x41",
+    r"\101",
 ];
 
-const DARGS: &[&str] = &[",", ";", "\\t", "|", "", "ab", "\\054", "x", "\\", "\\q", " ", "\\073"];
+const DARGS: &[&str] = &[
+    ",", ";", "\\t", "|", "", "ab", "\\054", "x", "\\", "\\q", " ", "\\073",
+];
 
 fn value(r: &mut Rng) -> Vec<u8> {
     if r.chance(0.01) {
         // a huge field
         let n = *r.pick(&[1_000, 70_000, 300_000]);
-        return (0..n).map(|i| b"abcdefgh,\"\n"[if i % 97 == 0 { r.below(11) } else { i % 8 }]).collect();
+        return (0..n)
+            .map(|i| b"abcdefgh,\"\n"[if i % 97 == 0 { r.below(11) } else { i % 8 }])
+            .collect();
     }
     if r.chance(0.1) {
         let n = r.below(8);
@@ -98,8 +202,14 @@ fn value(r: &mut Rng) -> Vec<u8> {
 }
 
 fn cell(r: &mut Rng, v: &[u8], delim: u8) -> Vec<u8> {
-    let special = v.iter().any(|&b| b == delim || b == b'"' || b == b'\n' || b == b'\r');
-    let quote = if special { !r.chance(0.08) } else { r.chance(0.1) };
+    let special = v
+        .iter()
+        .any(|&b| b == delim || b == b'"' || b == b'\n' || b == b'\r');
+    let quote = if special {
+        !r.chance(0.08)
+    } else {
+        r.chance(0.1)
+    };
     let mut c = if quote {
         let mut q = vec![b'"'];
         for &b in v {
@@ -137,7 +247,11 @@ fn csv(r: &mut Rng, hdr: &[String]) -> Vec<u8> {
     let crlf = r.below(4); // 0 LF, 1 CRLF, 2 mixed, 3 LF
     let mut rows: Vec<Vec<Vec<u8>>> = Vec::new();
     rows.push(hdr.iter().map(|h| h.as_bytes().to_vec()).collect());
-    let nrows = if r.chance(0.05) { 150 + r.below(200) } else { r.below(25) };
+    let nrows = if r.chance(0.05) {
+        150 + r.below(200)
+    } else {
+        r.below(25)
+    };
     let wide = r.chance(0.05);
     for i in 0..nrows {
         if i > 0 && r.chance(0.15) {
@@ -201,7 +315,11 @@ fn schema(r: &mut Rng, hdr: &[String]) -> Vec<u8> {
         }
         let mut toks: Vec<String> = Vec::new();
         if roll != 2 {
-            let name = if r.chance(0.85) && !hdr.is_empty() { r.pick(hdr).clone() } else { "missing".into() };
+            let name = if r.chance(0.85) && !hdr.is_empty() {
+                r.pick(hdr).clone()
+            } else {
+                "missing".into()
+            };
             if !name.is_empty() && !name.contains(' ') {
                 toks.push(format!("col:{name}"));
             }
@@ -229,7 +347,10 @@ fn schema(r: &mut Rng, hdr: &[String]) -> Vec<u8> {
             let j = r.below(i + 1);
             toks.swap(i, j);
         }
-        s.extend_from_slice(toks.join(if r.chance(0.2) { " \t " } else { " " }).as_bytes());
+        s.extend_from_slice(
+            toks.join(if r.chance(0.2) { " \t " } else { " " })
+                .as_bytes(),
+        );
         if r.chance(0.1) {
             s.push(b'\r');
         }
@@ -252,7 +373,9 @@ fn mutate(r: &mut Rng, old: &[u8]) -> Vec<u8> {
             }
             4 => {
                 // same number, different spelling: exercises strnum compares
-                let alt: &[&[u8]] = &[b"1", b"1.0", b" 1", b"+1", b"1e0", b"0x1", b"nan", b"-inf", b"-0", b"0"];
+                let alt: &[&[u8]] = &[
+                    b"1", b"1.0", b" 1", b"+1", b"1e0", b"0x1", b"nan", b"-inf", b"-0", b"0",
+                ];
                 lines[i] = r.pick(alt).to_vec();
             }
             1 => {
@@ -275,14 +398,26 @@ fn mutate(r: &mut Rng, old: &[u8]) -> Vec<u8> {
 
 fn maybe_delim(r: &mut Rng, args: &mut Vec<Vec<u8>>) {
     if r.chance(0.15) {
-        args.push(if r.chance(0.5) { b"-d".to_vec() } else { b"--delim".to_vec() });
+        args.push(if r.chance(0.5) {
+            b"-d".to_vec()
+        } else {
+            b"--delim".to_vec()
+        });
         args.push(r.pick(DARGS).as_bytes().to_vec());
     }
 }
 
 fn keyarg(r: &mut Rng, hdr: &[String]) -> Vec<u8> {
     let n = 1 + r.below(2);
-    let mut k: Vec<String> = (0..n).map(|_| if r.chance(0.9) { r.pick(hdr).clone() } else { "nope".into() }).collect();
+    let mut k: Vec<String> = (0..n)
+        .map(|_| {
+            if r.chance(0.9) {
+                r.pick(hdr).clone()
+            } else {
+                "nope".into()
+            }
+        })
+        .collect();
     k.dedup();
     k.join(",").into_bytes()
 }
@@ -290,7 +425,11 @@ fn keyarg(r: &mut Rng, hdr: &[String]) -> Vec<u8> {
 fn gen_case(r: &mut Rng) -> Case {
     let hdr = header(r);
     let s = |x: &str| x.as_bytes().to_vec();
-    let mut c = Case { cmd: "", files: Vec::new(), args: Vec::new() };
+    let mut c = Case {
+        cmd: "",
+        files: Vec::new(),
+        args: Vec::new(),
+    };
     match r.below(13) {
         0..=2 => {
             c.cmd = "stats";
@@ -335,9 +474,18 @@ fn gen_case(r: &mut Rng) -> Case {
             // diff is line-oriented: keep it to one record per line mostly
             let old = csv(r, &hdr);
             let new = mutate(r, &old);
-            c.files.push(("old.csv".into(), if r.chance(0.05) { Vec::new() } else { old }));
+            c.files.push((
+                "old.csv".into(),
+                if r.chance(0.05) { Vec::new() } else { old },
+            ));
             c.files.push(("new.csv".into(), new));
-            c.args = vec![s("diff"), s("old.csv"), s("new.csv"), s("--key"), keyarg(r, &hdr)];
+            c.args = vec![
+                s("diff"),
+                s("old.csv"),
+                s("new.csv"),
+                s("--key"),
+                keyarg(r, &hdr),
+            ];
             maybe_delim(r, &mut c.args);
         }
         9..=10 => {
@@ -363,14 +511,41 @@ fn gen_case(r: &mut Rng) -> Case {
             c.files.push(("in.csv".into(), csv(r, &hdr)));
             c.files.push(("s.schema".into(), schema(r, &hdr)));
             let pool: &[&str] = &[
-                "stats", "audit", "validate", "diff", "dedupe", "normalize", "version", "help", "-h", "--version",
-                "frob", "in.csv", "in.csv", "missing.csv", "s.schema", "--schema", "--key", "-d", "--delim", "-o",
-                "--strict", "--in-place", "-x", "-", "", "id", ",", "outdir",
+                "stats",
+                "audit",
+                "validate",
+                "diff",
+                "dedupe",
+                "normalize",
+                "version",
+                "help",
+                "-h",
+                "--version",
+                "frob",
+                "in.csv",
+                "in.csv",
+                "missing.csv",
+                "s.schema",
+                "--schema",
+                "--key",
+                "-d",
+                "--delim",
+                "-o",
+                "--strict",
+                "--in-place",
+                "-x",
+                "-",
+                "",
+                "id",
+                ",",
+                "outdir",
             ];
             let n = r.below(6);
             c.args = (0..n).map(|_| s(r.pick(pool))).collect();
             if let Some(first) = c.args.first() {
-                if first.as_slice() == b"normalize" && c.args.iter().any(|a| a.as_slice() == b"--in-place") {
+                if first.as_slice() == b"normalize"
+                    && c.args.iter().any(|a| a.as_slice() == b"--in-place")
+                {
                     // fine: runs in a scratch copy
                 }
             }
@@ -392,7 +567,10 @@ impl Impl {
         if let Some(p) = s.strip_prefix("rust:") {
             Impl::Rust(fs::canonicalize(p).unwrap_or_else(|_| panic!("no such binary: {p}")))
         } else if let Some(a) = s.strip_prefix("legacy:") {
-            Impl::Legacy { script: root.join("legacy/csvq.sh"), awk: a.to_string() }
+            Impl::Legacy {
+                script: root.join("legacy/csvq.sh"),
+                awk: a.to_string(),
+            }
         } else {
             panic!("IMPL must be rust:PATH or legacy:AWK, got {s}")
         }
@@ -446,7 +624,11 @@ fn run(imp: &Impl, case: &Case, dir: &Path) -> Outcome {
             c
         }
     };
-    let args: Vec<&std::ffi::OsStr> = case.args.iter().map(|a| std::ffi::OsStr::from_bytes(a)).collect();
+    let args: Vec<&std::ffi::OsStr> = case
+        .args
+        .iter()
+        .map(|a| std::ffi::OsStr::from_bytes(a))
+        .collect();
     let mut child = cmd
         .args(args)
         .current_dir(dir)
@@ -485,7 +667,13 @@ fn run(imp: &Impl, case: &Case, dir: &Path) -> Outcome {
     let stderr = t2.join().unwrap();
     let mut files = BTreeMap::new();
     snapshot(dir, dir, &mut files);
-    Outcome { stdout, stderr, code: status.and_then(|s| s.code()), files, timed_out }
+    Outcome {
+        stdout,
+        stderr,
+        code: status.and_then(|s| s.code()),
+        files,
+        timed_out,
+    }
 }
 
 fn compare(a: &Outcome, b: &Outcome) -> Option<String> {
@@ -546,7 +734,11 @@ impl Ctx {
                     let parts: Vec<Vec<u8>> = if unit_bytes {
                         case.files[fi].1.iter().map(|&b| vec![b]).collect()
                     } else {
-                        case.files[fi].1.split_inclusive(|&b| b == b'\n').map(<[u8]>::to_vec).collect()
+                        case.files[fi]
+                            .1
+                            .split_inclusive(|&b| b == b'\n')
+                            .map(<[u8]>::to_vec)
+                            .collect()
                     };
                     if unit_bytes && parts.len() > 4000 {
                         break;
@@ -581,7 +773,10 @@ impl Ctx {
 
 fn shell_quote(a: &[u8]) -> String {
     let s = String::from_utf8_lossy(a);
-    if !s.is_empty() && s.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_./,:=".contains(&b)) {
+    if !s.is_empty()
+        && s.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-_./,:=".contains(&b))
+    {
         s.into_owned()
     } else {
         format!("'{}'", s.replace('\'', r"'\''"))
@@ -629,7 +824,11 @@ fn main() {
     let argv: Vec<String> = std::env::args().skip(1).collect();
     let mut it = argv.iter();
     while let Some(k) = it.next() {
-        let mut v = || it.next().unwrap_or_else(|| panic!("{k} needs a value")).clone();
+        let mut v = || {
+            it.next()
+                .unwrap_or_else(|| panic!("{k} needs a value"))
+                .clone()
+        };
         match k.as_str() {
             "--cases" => cases = v().parse().unwrap(),
             "--seed" => seed = v().parse().unwrap(),
@@ -644,7 +843,11 @@ fn main() {
     }
     let work = std::env::temp_dir().join(format!("csvq-difffuzz-{}", std::process::id()));
     fs::create_dir_all(&work).unwrap();
-    let ctx = Ctx { a: Impl::parse(&a, &root), b: Impl::parse(&b, &root), work: work.clone() };
+    let ctx = Ctx {
+        a: Impl::parse(&a, &root),
+        b: Impl::parse(&b, &root),
+        work: work.clone(),
+    };
 
     let next = AtomicUsize::new(0);
     let fails = AtomicUsize::new(0);
@@ -654,7 +857,8 @@ fn main() {
     let start = Instant::now();
     std::thread::scope(|s| {
         for w in 0..jobs {
-            let (ctx, next, fails, stats, findings, out) = (&ctx, &next, &fails, &stats, &findings, &out);
+            let (ctx, next, fails, stats, findings, out) =
+                (&ctx, &next, &fails, &stats, &findings, &out);
             s.spawn(move || loop {
                 let i = next.fetch_add(1, Ordering::Relaxed);
                 if i >= cases || fails.load(Ordering::Relaxed) >= max_fail {
@@ -678,7 +882,12 @@ fn main() {
                     let dir = out.join(format!("seed{seed}-case{i}"));
                     save(&dir, &small, &kind, ctx, &oa, &ob);
                     let args: Vec<String> = small.args.iter().map(|a| shell_quote(a)).collect();
-                    let line = format!("case {i} [{}] {kind}: csvq {} -> {}", small.cmd, args.join(" "), dir.display());
+                    let line = format!(
+                        "case {i} [{}] {kind}: csvq {} -> {}",
+                        small.cmd,
+                        args.join(" "),
+                        dir.display()
+                    );
                     eprintln!("DIVERGENCE {line}");
                     findings.lock().unwrap().push(line);
                 }
@@ -693,7 +902,11 @@ fn main() {
     let st = stats.into_inner().unwrap();
     let total: u64 = st.values().map(|v| v.0).sum();
     let bad: u64 = st.values().map(|v| v.1).sum();
-    println!("difffuzz: {} vs {}, seed {seed}, {total} cases in {secs:.1}s", ctx.a.label(), ctx.b.label());
+    println!(
+        "difffuzz: {} vs {}, seed {seed}, {total} cases in {secs:.1}s",
+        ctx.a.label(),
+        ctx.b.label()
+    );
     println!("{:<10} {:>7} {:>9}", "command", "cases", "diverged");
     for (k, v) in &st {
         println!("{k:<10} {:>7} {:>9}", v.0, v.1);
@@ -705,8 +918,15 @@ fn main() {
             ctx.a.label(),
             ctx.b.label()
         );
-        let parts: Vec<String> =
-            st.iter().map(|(k, v)| format!("\n    \"{k}\": {{\"cases\": {}, \"diverged\": {}}}", v.0, v.1)).collect();
+        let parts: Vec<String> = st
+            .iter()
+            .map(|(k, v)| {
+                format!(
+                    "\n    \"{k}\": {{\"cases\": {}, \"diverged\": {}}}",
+                    v.0, v.1
+                )
+            })
+            .collect();
         s.push_str(&parts.join(","));
         s.push_str("\n  },\n  \"findings\": [");
         let f = findings.into_inner().unwrap();

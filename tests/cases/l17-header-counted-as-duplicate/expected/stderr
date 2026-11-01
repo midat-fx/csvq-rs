@@ -1,0 +1,2 @@
+csvq audit: wrote 3 report(s) to out/
+csvq audit: --strict gate failed (1 file(s) with dupes, 0 with ragged rows)

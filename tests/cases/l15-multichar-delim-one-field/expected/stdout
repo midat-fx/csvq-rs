@@ -1,0 +1,11 @@
+CSV COLUMN STATISTICS
+=====================
+File: in.csv
+Rows: 1 (excluding header)
+
+Column 1: a,b
+  type:      string
+  non-null:  1
+  nulls:     0 (0.0%)
+  distinct:  1
+  top values: 1,2 (1)

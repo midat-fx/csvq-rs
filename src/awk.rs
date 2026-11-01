@@ -70,7 +70,9 @@ pub fn is_number(s: &[u8]) -> Option<f64> {
     let ok = n > 0
         && v != f64::INFINITY
         && !erange
-        && s[n..].iter().all(|&b| b == b' ' || b == b'\t' || b == b'\n');
+        && s[n..]
+            .iter()
+            .all(|&b| b == b' ' || b == b'\t' || b == b'\n');
     ok.then_some(v)
 }
 
@@ -88,12 +90,23 @@ pub fn strtod(s: &[u8]) -> (f64, usize, bool) {
     let rest = &s[i..];
     let starts_ci = |p: &[u8]| rest.len() >= p.len() && rest[..p.len()].eq_ignore_ascii_case(p);
     let (mag, len, erange) = if starts_ci(b"inf") {
-        (f64::INFINITY, if starts_ci(b"infinity") { 8 } else { 3 }, false)
+        (
+            f64::INFINITY,
+            if starts_ci(b"infinity") { 8 } else { 3 },
+            false,
+        )
     } else if starts_ci(b"nan") {
         // optional "(n-char-sequence)"
         let tail = rest[3..].strip_prefix(b"(").map(|t| {
-            let k = t.iter().take_while(|b| b.is_ascii_alphanumeric() || **b == b'_').count();
-            if t.get(k) == Some(&b')') { k + 2 } else { 0 }
+            let k = t
+                .iter()
+                .take_while(|b| b.is_ascii_alphanumeric() || **b == b'_')
+                .count();
+            if t.get(k) == Some(&b')') {
+                k + 2
+            } else {
+                0
+            }
         });
         (f64::NAN, 3 + tail.unwrap_or(0), false)
     } else if rest.len() > 2

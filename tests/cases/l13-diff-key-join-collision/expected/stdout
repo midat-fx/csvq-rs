@@ -1,0 +1,5 @@
+CSV DIFF (key: a,b)
+======================
+~ changed: x,y,z | a=x,y->x; b=z->y,z; c=1->2
+
+Summary: 0 added, 1 changed, 0 removed

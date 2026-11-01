@@ -1,0 +1,11 @@
+CSV DATA QUALITY - SUMMARY
+=========================
+files:              1
+total data rows:    1001
+total bytes:        30
+columns min/max:    1 / 1
+files with crlf:    0
+files with dupes:   1
+files with ragged:  0
+files empty:        0
+total duplicate rows: 1

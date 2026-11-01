@@ -1,0 +1,2 @@
+col:id unique min:5
+col:id type:int

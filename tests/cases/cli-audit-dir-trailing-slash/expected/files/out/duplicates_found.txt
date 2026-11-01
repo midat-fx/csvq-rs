@@ -1,0 +1,12 @@
+CSV DATA QUALITY - DUPLICATES REPORT
+===================================
+
+File: d/a.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows
+
+File: d/b.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows

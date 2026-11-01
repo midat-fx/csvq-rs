@@ -1,0 +1,10 @@
+CSV SCHEMA VALIDATION
+=====================
+File:   in.csv
+Schema: s.schema
+Rules:  1   Data rows: 2
+
+  row 1: column 'id' value 2 > max 0
+  row 2: column 'id' value -5 < min 0
+
+FAIL: 2 violation(s)

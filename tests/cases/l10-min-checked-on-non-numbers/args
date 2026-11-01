@@ -1,0 +1,4 @@
+validate
+in.csv
+--schema
+s.schema

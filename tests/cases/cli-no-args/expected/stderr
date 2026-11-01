@@ -1,0 +1,26 @@
+csvq — deterministic CSV data-quality toolkit
+
+Usage:
+  csvq audit    <paths...> [-o DIR] [-d DELIM] [--strict]
+  csvq stats    <file> [-d DELIM]
+  csvq validate <file> --schema FILE [-d DELIM]
+  csvq diff     <old> <new> --key COL[,COL] [-d DELIM]
+  csvq dedupe   <file> [--key COL[,COL]] [-d DELIM]
+  csvq normalize <file> [--in-place]
+  csvq version
+  csvq help
+
+Commands:
+  audit      Write analysis_report.txt, data_summary.txt, duplicates_found.txt
+             into DIR (default ./out). --strict exits 1 if any file has
+             duplicate or ragged rows (use it as a CI gate).
+  stats      Per-column type, null rate, cardinality, min/max/mean, top values.
+  validate   Check a file against a schema DSL (docs/schema-dsl.md). Exits 1
+             on any violation.
+  diff       Keyed row diff between two CSVs (added / changed / removed).
+  dedupe     Drop duplicate rows (whole row, or by --key), keeping the first.
+  normalize  CRLF->LF, strip trailing whitespace, ensure a final newline.
+
+Global:
+  -d, --delim DELIM   Force the delimiter (default: auto-detect from header).
+  All output is deterministic and LC_ALL=C sorted.
