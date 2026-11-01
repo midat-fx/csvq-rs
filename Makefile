@@ -28,9 +28,9 @@ fuzz-full: build
 ## Legacy vs legacy on other awks: how portable was the original?
 fuzz-cross: build
 	-./target/release/difffuzz --cases 5000 --seed 2026 --jobs $(JOBS) --a legacy:$(AWK) --b legacy:gawk \
-	  --max-fail 100000 --out fuzz-out/cross-gawk --json results/fuzz/bwk-vs-gawk.json | tee results/fuzz/bwk-vs-gawk.txt
+	  --max-fail 100000 --no-shrink --out fuzz-out/cross-gawk --json results/fuzz/bwk-vs-gawk.json | tee results/fuzz/bwk-vs-gawk.txt
 	-./target/release/difffuzz --cases 5000 --seed 2026 --jobs $(JOBS) --a legacy:$(AWK) --b legacy:mawk \
-	  --max-fail 100000 --out fuzz-out/cross-mawk --json results/fuzz/bwk-vs-mawk.json | tee results/fuzz/bwk-vs-mawk.txt
+	  --max-fail 100000 --no-shrink --out fuzz-out/cross-mawk --json results/fuzz/bwk-vs-mawk.json | tee results/fuzz/bwk-vs-mawk.txt
 
 legacy-check:
 	@cd legacy && sed -n '/^```$$/,/^```$$/p' README.md | grep -v '^```' | shasum -a 256 -c --quiet && echo "legacy/: unmodified"

@@ -1,0 +1,4 @@
+binary: built from commit 806f03f (later commits only add the --no-shrink flag, which does not change generated cases)
+awk: awk version 20200816
+rustc: rustc 1.97.0 (2d8144b78 2026-07-07)
+command: ./target/release/difffuzz --cases 50000 --seed 2026 --jobs 4 --json results/fuzz/rust-vs-bwk.json

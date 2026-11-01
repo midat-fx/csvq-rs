@@ -1,0 +1,21 @@
+{
+  "a": "legacy(/usr/bin/awk)",
+  "b": "rust",
+  "seed": 2026,
+  "cases": 50000,
+  "identical": 50000,
+  "diverged": 0,
+  "timeouts": 0,
+  "seconds": 1140.6,
+  "by_command": {
+    "audit": {"cases": 7766, "identical": 7766, "diverged": 0, "timeouts": 0},
+    "cli": {"cases": 3891, "identical": 3891, "diverged": 0, "timeouts": 0},
+    "dedupe": {"cases": 7679, "identical": 7679, "diverged": 0, "timeouts": 0},
+    "diff": {"cases": 7611, "identical": 7611, "diverged": 0, "timeouts": 0},
+    "normalize": {"cases": 3832, "identical": 3832, "diverged": 0, "timeouts": 0},
+    "stats": {"cases": 11665, "identical": 11665, "diverged": 0, "timeouts": 0},
+    "validate": {"cases": 7556, "identical": 7556, "diverged": 0, "timeouts": 0}
+  },
+  "findings": [
+  ]
+}

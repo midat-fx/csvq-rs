@@ -5,7 +5,7 @@
 //! A mismatch is shrunk (lines, then bytes) and saved as a reproducer.
 //!
 //!   difffuzz [--cases N] [--seed S] [--jobs J] [--a IMPL] [--b IMPL]
-//!            [--out DIR] [--json FILE] [--max-fail N]
+//!            [--out DIR] [--json FILE] [--max-fail N] [--no-shrink]
 //!
 //! IMPL is `rust:PATH` or `legacy:AWK` (runs legacy/csvq.sh with CSVQ_AWK=AWK).
 //! Defaults: --a legacy:/usr/bin/awk, --b rust:<csvq next to this binary>.
@@ -840,6 +840,7 @@ fn main() {
     let mut b = format!("rust:{}", me.with_file_name("csvq").display());
     let mut out = root.join("fuzz-out");
     let mut json: Option<PathBuf> = None;
+    let mut no_shrink = false;
     let argv: Vec<String> = std::env::args().skip(1).collect();
     let mut it = argv.iter();
     while let Some(k) = it.next() {
@@ -857,6 +858,7 @@ fn main() {
             "--b" => b = v(),
             "--out" => out = PathBuf::from(v()),
             "--json" => json = Some(PathBuf::from(v())),
+            "--no-shrink" => no_shrink = true,
             _ => panic!("unknown argument {k}"),
         }
     }
@@ -902,7 +904,11 @@ fn main() {
                     eprintln!("TIMEOUT case {i} [{}] {}", case.cmd, kind.unwrap());
                 } else if let Some(kind) = kind {
                     fails.fetch_add(1, Ordering::Relaxed);
-                    let small = ctx.shrink(case, &kind, &tag);
+                    let small = if no_shrink {
+                        case
+                    } else {
+                        ctx.shrink(case, &kind, &tag)
+                    };
                     let (_, oa, ob) = ctx.check(&small, &tag);
                     let dir = out.join(format!("seed{seed}-case{i}"));
                     save(&dir, &small, &kind, ctx, &oa, &ob);
