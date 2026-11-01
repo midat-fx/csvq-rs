@@ -1,0 +1,5 @@
+id,score,grade,active
+1,10,A,true
+2,20,B,false
+3,30,A,true
+4,,A,true

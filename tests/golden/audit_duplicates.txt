@@ -1,0 +1,34 @@
+CSV DATA QUALITY - DUPLICATES REPORT
+===================================
+
+File: tests/fixtures/clean.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows
+
+File: tests/fixtures/crlf.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows
+
+File: tests/fixtures/dupes.csv
+  duplicate groups: 2
+  duplicate rows:   3
+  top duplicated rows (count, row):
+         3  2,Bob
+         2  3,Carol
+
+File: tests/fixtures/ragged.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows
+
+File: tests/fixtures/empty.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows
+
+File: tests/fixtures/quoted.csv
+  duplicate groups: 0
+  duplicate rows:   0
+  no duplicate rows

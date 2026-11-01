@@ -1,0 +1,7 @@
+CSV SCHEMA VALIDATION
+=====================
+File:   tests/fixtures/people_ok.csv
+Schema: tests/fixtures/people.schema
+Rules:  3   Data rows: 3
+
+OK: no violations

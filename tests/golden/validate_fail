@@ -1,0 +1,12 @@
+CSV SCHEMA VALIDATION
+=====================
+File:   tests/fixtures/people.csv
+Schema: tests/fixtures/people.schema
+Rules:  3   Data rows: 4
+
+  row 2: column 'email' value 'bad-email' fails regex ^[^@]+@[^@]+$
+  row 2: column 'age' value 17 < min 18
+  row 3: column 'age' is required but empty
+  row 4: column 'id' value '1' is not unique
+
+FAIL: 4 violation(s)

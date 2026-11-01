@@ -1,0 +1,56 @@
+CSV DATA QUALITY - ANALYSIS REPORT
+=================================
+
+File:        tests/fixtures/clean.csv
+  rows:      3 (excluding header)
+  columns:   3
+  delimiter: comma
+  crlf:      no (0 line(s))
+  ragged:    0 row(s)
+  bytes:     54
+  empty:     no
+
+File:        tests/fixtures/crlf.csv
+  rows:      2 (excluding header)
+  columns:   2
+  delimiter: comma
+  crlf:      yes (3 line(s))
+  ragged:    0 row(s)
+  bytes:     26
+  empty:     no
+
+File:        tests/fixtures/dupes.csv
+  rows:      7 (excluding header)
+  columns:   2
+  delimiter: comma
+  crlf:      no (0 line(s))
+  ragged:    0 row(s)
+  bytes:     57
+  empty:     no
+
+File:        tests/fixtures/ragged.csv
+  rows:      3 (excluding header)
+  columns:   3
+  delimiter: comma
+  crlf:      no (0 line(s))
+  ragged:    2 row(s)
+  bytes:     48
+  empty:     no
+
+File:        tests/fixtures/empty.csv
+  rows:      0 (excluding header)
+  columns:   0
+  delimiter: comma
+  crlf:      no (0 line(s))
+  ragged:    0 row(s)
+  bytes:     0
+  empty:     yes
+
+File:        tests/fixtures/quoted.csv
+  rows:      3 (excluding header)
+  columns:   3
+  delimiter: comma
+  crlf:      no (0 line(s))
+  ragged:    0 row(s)
+  bytes:     90
+  empty:     no

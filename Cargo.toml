@@ -1,0 +1,23 @@
+[package]
+name = "csvq-rs"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.82"
+description = "Rust port of the csvq Bash+awk CSV data-quality toolkit, proven byte-equivalent by differential fuzzing"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "csvq"
+path = "src/main.rs"
+
+[[bin]]
+name = "difffuzz"
+path = "src/bin/difffuzz.rs"
+
+[dependencies]
+regex = { version = "1.12", default-features = false, features = ["std", "perf"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

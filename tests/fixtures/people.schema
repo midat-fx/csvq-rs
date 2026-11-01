@@ -1,0 +1,4 @@
+# people schema
+col:id    type:int required unique min:1
+col:email type:string required regex:^[^@]+@[^@]+$
+col:age   type:int required min:18 max:120

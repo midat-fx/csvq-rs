@@ -1,0 +1,7 @@
+CSV DIFF (key: id)
+======================
+~ changed: 2 | amount=20->25
+- removed: 3 | 3,Carol,30
++ added:   4 | 4,Dave,40
+
+Summary: 1 added, 1 changed, 1 removed
