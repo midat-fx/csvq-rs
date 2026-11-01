@@ -2,18 +2,34 @@
 //! in csvq.sh). Line-oriented on purpose, like the original: one record per
 //! physical line, so quoted newlines are not joined here.
 
-use crate::awk::split_commas;
+use crate::awk::{is_number, split_commas};
 use crate::csv::{detect_delim, Fields, Lines};
 use std::collections::{HashMap, HashSet};
 use std::io::{self, BufRead, Write};
 
-fn read_lines(r: impl BufRead) -> io::Result<Vec<Vec<u8>>> {
+/// A physical line plus its numeric value when awk would treat it as a
+/// strnum: `line = $0` keeps $0's numeric-string status unless `sub(/\r$/)`
+/// actually removed a CR (sub assigns a plain string).
+type Line = (Vec<u8>, Option<f64>);
+
+fn read_lines(r: impl BufRead) -> io::Result<Vec<Line>> {
     let mut lines = Lines::new(r);
     let mut out = Vec::new();
-    while let Some((l, _)) = lines.next_line()? {
-        out.push(l.to_vec());
+    while let Some((l, cr)) = lines.next_line()? {
+        out.push((l.to_vec(), if cr { None } else { is_number(l) }));
     }
     Ok(out)
+}
+
+/// `oldrow[k] != line`: two strnums compare numerically (by the sign of
+/// their difference, so NaN equals anything), otherwise as strings. Lines
+/// that are numerically equal but textually different ("1" vs "1.0") are
+/// therefore never reported as changed (legacy bug L3, preserved).
+fn differs(a: &Line, b: &Line) -> bool {
+    match (a.1, b.1) {
+        (Some(x), Some(y)) => x - y < 0.0 || x - y > 0.0,
+        _ => a.0 != b.0,
+    }
 }
 
 fn header_pos(f: &Fields) -> HashMap<Vec<u8>, usize> {
@@ -60,35 +76,35 @@ pub fn run(
     let mut sep = sep_arg.to_vec();
     let mut f = Fields::default();
     let mut ops: Vec<Vec<u8>> = Vec::new();
-    let mut oldrow: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
+    let mut oldrow: HashMap<Vec<u8>, Line> = HashMap::new();
 
     if let Some((head, rows)) = old_lines.split_first() {
         if sep.is_empty() {
-            sep = vec![detect_delim(head)];
+            sep = vec![detect_delim(&head.0)];
         }
-        f.parse(head, &sep);
+        f.parse(&head.0, &sep);
         let opos = header_pos(&f);
         for line in rows {
-            let k = keystr(&mut f, line, &sep, &keys, &opos);
+            let k = keystr(&mut f, &line.0, &sep, &keys, &opos);
             oldrow.insert(k, line.clone());
         }
     }
     let mut newseen: HashSet<Vec<u8>> = HashSet::new();
     if let Some((head, rows)) = new_lines.split_first() {
-        f.parse(head, &sep);
+        f.parse(&head.0, &sep);
         let nh: Vec<Vec<u8>> = (1..=f.len()).map(|i| f.get(i).to_vec()).collect();
         let npos = header_pos(&f);
         let mut fo = Fields::default();
         for line in rows {
-            let k = keystr(&mut f, line, &sep, &keys, &npos);
+            let k = keystr(&mut f, &line.0, &sep, &keys, &npos);
             newseen.insert(k.clone());
             match oldrow.get(&k) {
-                None => ops.push([b"A\t", &k[..], b"\t", line].concat()),
-                Some(o) if o != line => {
+                None => ops.push([b"A\t", &k[..], b"\t", &line.0].concat()),
+                Some(o) if differs(o, line) => {
                     // changed_cols: compares by position against NEW's header
                     // names, even when the two headers differ (L2).
-                    fo.parse(o, &sep);
-                    f.parse(line, &sep);
+                    fo.parse(&o.0, &sep);
+                    f.parse(&line.0, &sep);
                     let mut res = Vec::new();
                     for (i, name) in nh.iter().enumerate() {
                         let (a, b) = (fo.get_or_empty(i + 1), f.get_or_empty(i + 1));
@@ -107,7 +123,7 @@ pub fn run(
     }
     for (k, line) in &oldrow {
         if !newseen.contains(k) {
-            ops.push([b"R\t", &k[..], b"\t", line].concat());
+            ops.push([b"R\t", &k[..], b"\t", &line.0].concat());
         }
     }
 

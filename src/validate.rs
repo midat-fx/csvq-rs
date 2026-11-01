@@ -85,11 +85,12 @@ pub fn load_schema(text: &[u8]) -> Result<Schema, String> {
         r.ty = std::mem::take(&mut ty);
         r.required = std::mem::take(&mut req);
         r.unique = std::mem::take(&mut uniq);
+        // `pend_min + 0`: the addition also turns -0 into +0.
         if let Some(m) = min.take() {
-            r.min = Some(atof(&m));
+            r.min = Some(atof(&m) + 0.0);
         }
         if let Some(m) = max.take() {
-            r.max = Some(atof(&m));
+            r.max = Some(atof(&m) + 0.0);
         }
         r.regex_src = std::mem::take(&mut re);
         r.regex = if r.regex_src.is_empty() {

@@ -1,6 +1,7 @@
 # Legacy csvq (oracle)
 
-Unmodified copy of `csvq.sh`, `lib/*.awk` and `LICENSE` from
+Unmodified copy of `csvq.sh`, `lib/*.awk`, `bench/gen.awk` (the benchmark
+data generator) and `LICENSE` from
 [midat-fx/csv-data-quality-cli](https://github.com/midat-fx/csv-data-quality-cli)
 at commit `85721ada96e4bc39bec66e5ec7fc1f64c2564392`.
 
@@ -19,4 +20,5 @@ d7fd3ca83820fcffb00aa32a26478f928775fd44b67d48088f23f625553c105b  lib/report_bui
 761bfed0189e96e633e13cce963c45dccf34b5afe229b0ea14581c412d59829c  lib/stats.awk
 95bd5fa35e3be3702910a2d552df667d568367ba1c55d49acfea482a3aa7d15f  lib/validate.awk
 191df3ecd3bde468f29636780815d52769b9ca4c6b1a6d7ec53b631c2e455d15  LICENSE
+a9e6471a5a714317f1b6facbf20229023019a4ed152e4d30ed50a02f4c8e8f26  bench/gen.awk
 ```

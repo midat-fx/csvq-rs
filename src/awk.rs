@@ -43,10 +43,8 @@ pub fn qstring(s: &[u8]) -> Vec<u8> {
                 }
                 out.push(n as u8);
             }
-            _ => {
-                out.push(b'\\');
-                out.push(c);
-            }
+            // In this awk version an unknown escape just drops the backslash.
+            _ => out.push(c),
         }
     }
     // The result is a C string: it ends at the first NUL (e.g. from `\0`).
@@ -61,6 +59,23 @@ pub fn qstring(s: &[u8]) -> Vec<u8> {
 /// whitespace, hex floats, `inf`/`infinity` and `nan`, so `"0x1A" + 0` is 26
 /// here (gawk and mawk say 0 — one of the cross-awk divergences).
 pub fn atof(s: &[u8]) -> f64 {
+    strtod(s).0
+}
+
+/// BWK `is_number`: does a string read from input count as numeric (a
+/// "strnum")? strtod must consume something, only blanks may follow, and the
+/// result may be neither +HUGE_VAL nor out of range (ERANGE).
+pub fn is_number(s: &[u8]) -> Option<f64> {
+    let (v, n, erange) = strtod(s);
+    let ok = n > 0
+        && v != f64::INFINITY
+        && !erange
+        && s[n..].iter().all(|&b| b == b' ' || b == b'\t' || b == b'\n');
+    ok.then_some(v)
+}
+
+/// macOS strtod: (value, bytes consumed or 0 if no conversion, ERANGE set).
+pub fn strtod(s: &[u8]) -> (f64, usize, bool) {
     let mut i = 0;
     while i < s.len() && matches!(s[i], b' ' | b'\t' | b'\n' | 0x0b | 0x0c | b'\r') {
         i += 1;
@@ -72,28 +87,34 @@ pub fn atof(s: &[u8]) -> f64 {
     }
     let rest = &s[i..];
     let starts_ci = |p: &[u8]| rest.len() >= p.len() && rest[..p.len()].eq_ignore_ascii_case(p);
-    let mag = if starts_ci(b"inf") {
-        f64::INFINITY
+    let (mag, len, erange) = if starts_ci(b"inf") {
+        (f64::INFINITY, if starts_ci(b"infinity") { 8 } else { 3 }, false)
     } else if starts_ci(b"nan") {
-        f64::NAN
+        // optional "(n-char-sequence)"
+        let tail = rest[3..].strip_prefix(b"(").map(|t| {
+            let k = t.iter().take_while(|b| b.is_ascii_alphanumeric() || **b == b'_').count();
+            if t.get(k) == Some(&b')') { k + 2 } else { 0 }
+        });
+        (f64::NAN, 3 + tail.unwrap_or(0), false)
     } else if rest.len() > 2
         && rest[0] == b'0'
         && (rest[1] | 0x20) == b'x'
         && (rest[2].is_ascii_hexdigit()
             || (rest[2] == b'.' && rest.get(3).is_some_and(u8::is_ascii_hexdigit)))
     {
-        hex_float(&rest[2..])
+        let (v, n) = hex_float(&rest[2..]);
+        (v, 2 + n, v.is_infinite())
     } else {
-        decimal_prefix(rest)
+        match decimal_prefix(rest) {
+            Some(x) => x,
+            // No conversion at all: strtod returns +0 even after a '-'.
+            None => return (0.0, 0, false),
+        }
     };
-    if neg {
-        -mag
-    } else {
-        mag
-    }
+    (if neg { -mag } else { mag }, i + len, erange)
 }
 
-fn decimal_prefix(s: &[u8]) -> f64 {
+fn decimal_prefix(s: &[u8]) -> Option<(f64, usize, bool)> {
     let digits = |from: usize| s[from..].iter().take_while(|b| b.is_ascii_digit()).count();
     let int = digits(0);
     let mut end = int;
@@ -103,8 +124,9 @@ fn decimal_prefix(s: &[u8]) -> f64 {
         end += 1 + frac;
     }
     if int + frac == 0 {
-        return 0.0;
+        return None;
     }
+    let mant_end = end;
     if matches!(s.get(end), Some(b'e' | b'E')) {
         let mut j = end + 1;
         if matches!(s.get(j), Some(b'+' | b'-')) {
@@ -117,13 +139,17 @@ fn decimal_prefix(s: &[u8]) -> f64 {
     }
     // Rust's parser rejects a bare trailing '.', strtod does not.
     let text = std::str::from_utf8(&s[..end]).unwrap();
-    text.trim_end_matches('.').parse().unwrap_or(0.0)
+    let v: f64 = text.trim_end_matches('.').parse().ok()?;
+    // ERANGE: overflow, or underflow to zero/subnormal from nonzero digits.
+    let nonzero = s[..mant_end].iter().any(|&b| (b'1'..=b'9').contains(&b));
+    let erange = v.is_infinite() || (nonzero && v.abs() < f64::MIN_POSITIVE);
+    Some((v, end, erange))
 }
 
 // ponytail: keeps the first 15 significant hex digits and truncates the rest,
 // so hex strings longer than that may round differently from strtod. Hex
 // numbers only reach csvq through schema min/max and validated values.
-fn hex_float(s: &[u8]) -> f64 {
+fn hex_float(s: &[u8]) -> (f64, usize) {
     let mut mant: u64 = 0;
     let mut sig = 0;
     let mut exp2: i64 = 0;
@@ -165,9 +191,10 @@ fn hex_float(s: &[u8]) -> f64 {
         }
         if j > start {
             exp2 += if eneg { -e } else { e };
+            i = j;
         }
     }
-    (mant as f64) * 2f64.powi(exp2.clamp(-2000, 2000) as i32)
+    (mant as f64 * 2f64.powi(exp2.clamp(-2000, 2000) as i32), i)
 }
 
 /// C printf `%.<prec>g`.
@@ -253,15 +280,17 @@ pub fn translate_ere(re: &[u8]) -> Result<String, String> {
             }
             b'[' => {
                 let set = bracket(re, &mut i)?;
+                if !set.iter().any(|&x| x) {
+                    // BWK quirk: a class left empty (e.g. `[z-a]`) matches
+                    // the empty string rather than nothing.
+                    out.push_str("(?:)");
+                    continue;
+                }
                 out.push('[');
                 for b in 0..=255u8 {
                     if set[b as usize] {
                         push_byte(&mut out, b);
                     }
-                }
-                if !set.iter().any(|&x| x) {
-                    // An empty class matches nothing; Rust rejects `[]`.
-                    out.push_str(r"\x00&&\x01");
                 }
                 out.push(']');
             }
@@ -420,7 +449,8 @@ mod tests {
     fn qstring_matches_bwk() {
         assert_eq!(qstring(br"\t"), b"\t");
         assert_eq!(qstring(br"\054"), b",");
-        assert_eq!(qstring(br"a\qb"), br"a\qb");
+        assert_eq!(qstring(br"a\qb"), b"aqb");
+        assert_eq!(qstring(br"\9"), b"\t");
         assert_eq!(qstring(br"x\"), br"x\");
         assert_eq!(qstring(br"ab\0cd"), b"ab");
     }
@@ -434,11 +464,28 @@ mod tests {
         assert_eq!(atof(b"-.5"), -0.5);
         assert_eq!(atof(b"5."), 5.0);
         assert_eq!(atof(b"abc"), 0.0);
+        assert!(atof(b"-").is_sign_positive());
+        assert!(atof(b"-0").is_sign_negative());
         assert_eq!(atof(b"Infinity"), f64::INFINITY);
         assert!(atof(b"nan").is_nan());
         assert_eq!(atof(b"0x1p4"), 16.0);
         assert_eq!(atof(b"0x"), 0.0);
         assert_eq!(atof(b"1e400"), f64::INFINITY);
+    }
+
+    #[test]
+    fn strnum_rules() {
+        assert_eq!(is_number(b" 1 "), Some(1.0));
+        assert_eq!(is_number(b"0x10"), Some(16.0));
+        assert_eq!(is_number(b"-inf"), Some(f64::NEG_INFINITY));
+        assert!(is_number(b"nan(12)").unwrap().is_nan());
+        assert_eq!(is_number(b"inf"), None);
+        assert_eq!(is_number(b"-1e400"), None);
+        assert_eq!(is_number(b"1e-320"), None);
+        assert_eq!(is_number(b"0e-999"), Some(0.0));
+        assert_eq!(is_number(b"1e5x"), None);
+        assert_eq!(is_number(b""), None);
+        assert_eq!(is_number(b"."), None);
     }
 
     #[test]
@@ -468,7 +515,10 @@ mod tests {
         assert!(m("[]a]", "]"));
         assert!(m("a.b", "a\nb"));
         assert!(m("^[[:digit:]]{3}$", "123"));
-        assert!(!m("[z-a]", "m"));
+        assert!(m("x[z-a]y", "xy"));
+        assert!(!m("x[^z-a]y", "xy"));
+        assert!(m("[a-c-e]", "d"));
+        assert!(!m(r"[a\-z]", "m"));
         assert!(m("[a-]", "-"));
     }
 }
