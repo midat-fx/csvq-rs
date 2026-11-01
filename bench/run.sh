@@ -10,6 +10,7 @@
 # LEGACY_CMDS commands to also time on the legacy script (default: CMDS)
 # RUNS        Rust repetitions, median reported (default 3; legacy runs once)
 # OUT         results directory (default results/bench/$SIZE)
+# RUST        csvq binary to time (default target/release/csvq)
 #
 # Data lives in a temp directory that is deleted on exit. For each command
 # the stdout (or audit reports) of both implementations is hashed, so every
@@ -24,7 +25,7 @@ RUNS="${RUNS:-3}"
 OUT="${OUT:-$root/results/bench/$SIZE}"
 AWK="${AWK:-/usr/bin/awk}"
 GENAWK="$(command -v mawk || echo awk)"
-RUST="$root/target/release/csvq"
+RUST="${RUST:-$root/target/release/csvq}"
 LEGACY=(bash "$root/legacy/csvq.sh")
 
 case "$SIZE" in

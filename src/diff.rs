@@ -4,33 +4,33 @@
 
 use crate::awk::{is_number, split_commas};
 use crate::csv::{detect_delim, Fields, Lines};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
 
-/// A physical line plus its numeric value when awk would treat it as a
-/// strnum: `line = $0` keeps $0's numeric-string status unless `sub(/\r$/)`
-/// actually removed a CR (sub assigns a plain string).
-type Line = (Vec<u8>, Option<f64>);
-
-fn read_lines(r: impl BufRead) -> io::Result<Vec<Line>> {
-    let mut lines = Lines::new(r);
-    let mut out = Vec::new();
-    while let Some((l, cr)) = lines.next_line()? {
-        out.push((l.to_vec(), if cr { None } else { is_number(l) }));
-    }
-    Ok(out)
+/// A physical line and whether `sub(/\r$/)` removed a CR from it. awk's
+/// `line = $0` keeps $0's numeric-string status unless the sub actually
+/// fired (sub assigns a plain string).
+struct Line {
+    text: Vec<u8>,
+    cr: bool,
 }
 
 /// `oldrow[k] != line`: two strnums compare numerically (by the sign of
 /// their difference, so NaN equals anything), otherwise as strings. Lines
 /// that are numerically equal but textually different ("1" vs "1.0") are
 /// therefore never reported as changed (legacy bug L3, preserved).
+/// Equal bytes are never "different" either way, so the strnum check only
+/// runs when the bytes differ.
 // Not `x - y != 0.0`: that is true for NaN, and awk says NaN is equal.
 #[allow(clippy::double_comparisons)]
-fn differs(a: &Line, b: &Line) -> bool {
-    match (a.1, b.1) {
+fn differs(old: &Line, new: &[u8], new_cr: bool) -> bool {
+    if old.text == new {
+        return false;
+    }
+    let num = |t: &[u8], cr: bool| if cr { None } else { is_number(t) };
+    match (num(&old.text, old.cr), num(new, new_cr)) {
         (Some(x), Some(y)) => x - y < 0.0 || x - y > 0.0,
-        _ => a.0 != b.0,
+        _ => true,
     }
 }
 
@@ -58,6 +58,43 @@ fn keystr(
     s
 }
 
+/// OLD rows by key; the flag records whether NEW had the key. Later rows
+/// with the same key overwrite earlier ones, like `oldrow[k] = line`.
+type OldRows = HashMap<Vec<u8>, (Line, bool)>;
+
+/// Load a header line and the rows under it as OLD. Returns false if the
+/// input had no lines at all.
+fn load_old(
+    lines: &mut Lines<impl BufRead>,
+    sep: &mut Vec<u8>,
+    keys: &[Vec<u8>],
+    f: &mut Fields,
+    oldrow: &mut OldRows,
+) -> io::Result<bool> {
+    let Some((head, _)) = lines.next_line()? else {
+        return Ok(false);
+    };
+    if sep.is_empty() {
+        *sep = vec![detect_delim(head)];
+    }
+    f.parse(head, sep);
+    let opos = header_pos(f);
+    while let Some((l, cr)) = lines.next_line()? {
+        let k = keystr(f, l, sep, keys, &opos);
+        oldrow.insert(
+            k,
+            (
+                Line {
+                    text: l.to_vec(),
+                    cr,
+                },
+                false,
+            ),
+        );
+    }
+    Ok(true)
+}
+
 pub fn run(
     old: impl BufRead,
     new: impl BufRead,
@@ -66,66 +103,54 @@ pub fn run(
     out: &mut impl Write,
 ) -> io::Result<()> {
     let keys = split_commas(key);
-    let mut old_lines = read_lines(old)?;
-    let mut new_lines = read_lines(new)?;
-    // awk's `NR == FNR` idiom: with an empty OLD file it is still true while
-    // reading NEW, so NEW is loaded as if it were OLD and every row comes out
-    // as "removed" (legacy bug L1, preserved).
-    if old_lines.is_empty() {
-        old_lines = std::mem::take(&mut new_lines);
-    }
-
     let mut sep = sep_arg.to_vec();
     let mut f = Fields::default();
     let mut ops: Vec<Vec<u8>> = Vec::new();
-    let mut oldrow: HashMap<Vec<u8>, Line> = HashMap::new();
+    let mut oldrow = OldRows::new();
+    let mut new = Lines::new(new);
 
-    if let Some((head, rows)) = old_lines.split_first() {
-        if sep.is_empty() {
-            sep = vec![detect_delim(&head.0)];
-        }
-        f.parse(&head.0, &sep);
-        let opos = header_pos(&f);
-        for line in rows {
-            let k = keystr(&mut f, &line.0, &sep, &keys, &opos);
-            oldrow.insert(k, line.clone());
-        }
+    // awk's `NR == FNR` idiom: with an empty OLD file it is still true while
+    // reading NEW, so NEW is loaded as if it were OLD and every row comes out
+    // as "removed" (legacy bug L1, preserved).
+    if !load_old(&mut Lines::new(old), &mut sep, &keys, &mut f, &mut oldrow)? {
+        load_old(&mut new, &mut sep, &keys, &mut f, &mut oldrow)?;
     }
-    let mut newseen: HashSet<Vec<u8>> = HashSet::new();
-    if let Some((head, rows)) = new_lines.split_first() {
-        f.parse(&head.0, &sep);
+
+    if let Some((head, _)) = new.next_line()? {
+        f.parse(head, &sep);
         let nh: Vec<Vec<u8>> = (1..=f.len()).map(|i| f.get(i).to_vec()).collect();
         let npos = header_pos(&f);
         let mut fo = Fields::default();
-        for line in rows {
-            let k = keystr(&mut f, &line.0, &sep, &keys, &npos);
-            newseen.insert(k.clone());
-            match oldrow.get(&k) {
-                None => ops.push([b"A\t", &k[..], b"\t", &line.0].concat()),
-                Some(o) if differs(o, line) => {
-                    // changed_cols: compares by position against NEW's header
-                    // names, even when the two headers differ (L2).
-                    fo.parse(&o.0, &sep);
-                    f.parse(&line.0, &sep);
-                    let mut res = Vec::new();
-                    for (i, name) in nh.iter().enumerate() {
-                        let (a, b) = (fo.get_or_empty(i + 1), f.get_or_empty(i + 1));
-                        if a != b {
-                            if !res.is_empty() {
-                                res.extend_from_slice(b"; ");
+        while let Some((line, cr)) = new.next_line()? {
+            let k = keystr(&mut f, line, &sep, &keys, &npos);
+            match oldrow.get_mut(&k) {
+                None => ops.push([b"A\t", &k[..], b"\t", line].concat()),
+                Some((o, seen)) => {
+                    *seen = true;
+                    if differs(o, line, cr) {
+                        // changed_cols: compares by position against NEW's
+                        // header names, even when the two headers differ (L2).
+                        fo.parse(&o.text, &sep);
+                        f.parse(line, &sep);
+                        let mut res = Vec::new();
+                        for (i, name) in nh.iter().enumerate() {
+                            let (a, b) = (fo.get_or_empty(i + 1), f.get_or_empty(i + 1));
+                            if a != b {
+                                if !res.is_empty() {
+                                    res.extend_from_slice(b"; ");
+                                }
+                                res.extend_from_slice(&[&name[..], b"=", a, b"->", b].concat());
                             }
-                            res.extend_from_slice(&[&name[..], b"=", a, b"->", b].concat());
                         }
+                        ops.push([b"C\t", &k[..], b"\t", &res].concat());
                     }
-                    ops.push([b"C\t", &k[..], b"\t", &res].concat());
                 }
-                Some(_) => {}
             }
         }
     }
-    for (k, line) in &oldrow {
-        if !newseen.contains(k) {
-            ops.push([b"R\t", &k[..], b"\t", &line.0].concat());
+    for (k, (line, seen)) in &oldrow {
+        if !seen {
+            ops.push([b"R\t", &k[..], b"\t", &line.text].concat());
         }
     }
 
