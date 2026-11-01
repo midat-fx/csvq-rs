@@ -124,11 +124,15 @@ headroom. From 1 GiB to 3 GiB, peak memory of both commands stayed at
 load and page cache). The other five commands already peaked at 1.4–3.2 GiB of RSS at 1 GiB, and that
 grows with the data in both implementations (DESIGN.md §9).
 
-`diff` gains least. Its Rust runs spent 2–5x more time in the kernel than in
-user code (sys 98–190 s, user 40–43 s), and wall time varied from 224 to
-368 s between runs. It holds both files in memory and sorts every line, but I
-have not profiled it beyond that. `stats` keeps every distinct value per
-column, as the awk arrays do, and used about twice awk's memory on this data.
+`diff` gained least in this run. Its Rust time was mostly kernel time
+(sys 98–190 s, user 40–43 s), and wall time varied from 224 to 368 s between
+runs. It used to read both files whole into memory, then copy every OLD line
+again into the key map. Now NEW is streamed and OLD lines are moved into the
+map. In a before/after run on the same 1 GiB data
+(`results/bench/diff-1G/`), the median went from 85.7 s to 48.5 s, user time
+from 33.4 s to 21.7 s and sys time from 27.2 s to 8.8 s, with the same
+output. The load was higher during the after run. `stats` keeps every
+distinct value per column, as the awk arrays do, and used about twice awk's memory on this data.
 
 **Long multi-line records** (`results/quadratic/times.txt`). The input is the
 frozen case `edge-100k-field-audit`: 228 KB and 28,654 physical lines, but

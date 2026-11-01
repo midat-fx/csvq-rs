@@ -1,0 +1,23 @@
+# difffuzz after the diff change: old binary (a65844f) vs new, then legacy vs new
+... 100000 cases
+difffuzz: rust vs rust, seed 11, 100000 cases in 136.5s
+command      cases identical  diverged   timeout
+audit        15244     15244         0         0
+cli           7818      7818         0         0
+dedupe       15455     15455         0         0
+diff         15233     15233         0         0
+normalize     7783      7783         0         0
+stats        23236     23236         0         0
+validate     15231     15231         0         0
+total       100000    100000         0         0
+... 6000 cases
+difffuzz: legacy(/usr/bin/awk) vs rust, seed 12, 6000 cases in 84.4s
+command      cases identical  diverged   timeout
+audit          959       959         0         0
+cli            476       476         0         0
+dedupe         865       865         0         0
+diff           906       906         0         0
+normalize      466       466         0         0
+stats         1382      1382         0         0
+validate       946       946         0         0
+total         6000      6000         0         0
