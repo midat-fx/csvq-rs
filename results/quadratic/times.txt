@@ -1,0 +1,8 @@
+input: 228414 bytes, 28654 physical lines, 3 logical records
+load average at start: { 37.40 41.54 45.14 }
+audit rust real_s=0.00
+audit legacy real_s=309.53
+audit reports identical
+stats rust real_s=0.01
+stats legacy real_s=304.42
+stats output identical
