@@ -192,7 +192,9 @@ const DARGS: &[&str] = &[
 fn value(r: &mut Rng) -> Vec<u8> {
     if r.chance(0.01) {
         // a huge field
-        let n = *r.pick(&[1_000, 70_000, 300_000]);
+        // The legacy parser concatenates one character at a time, which is
+        // quadratic: 100k is about a second in BWK awk, 300k about 30.
+        let n = *r.pick(&[1_000, 20_000, 100_000]);
         return (0..n)
             .map(|i| b"abcdefgh,\"\n"[if i % 97 == 0 { r.below(11) } else { i % 8 }])
             .collect();
@@ -681,7 +683,7 @@ fn run(imp: &Impl, case: &Case, dir: &Path) -> Outcome {
 
 fn compare(a: &Outcome, b: &Outcome) -> Option<String> {
     if a.timed_out || b.timed_out {
-        return Some("timeout".into());
+        return Some(format!("timeout ({})", if a.timed_out { "a" } else { "b" }));
     }
     if a.code != b.code {
         return Some(format!("exit code {:?} vs {:?}", a.code, b.code));
@@ -868,8 +870,8 @@ fn main() {
 
     let next = AtomicUsize::new(0);
     let fails = AtomicUsize::new(0);
-    // command -> (cases, diverged)
-    let stats: Mutex<BTreeMap<&'static str, (u64, u64)>> = Mutex::new(BTreeMap::new());
+    // command -> (cases, diverged, timed out)
+    let stats: Mutex<BTreeMap<&'static str, (u64, u64, u64)>> = Mutex::new(BTreeMap::new());
     let findings: Mutex<Vec<String>> = Mutex::new(Vec::new());
     let start = Instant::now();
     std::thread::scope(|s| {
@@ -886,13 +888,19 @@ fn main() {
                 let case = gen_case(&mut r);
                 let tag = format!("w{w}");
                 let (kind, _, _) = ctx.check(&case, &tag);
+                // A run that hits the time limit says nothing about
+                // equivalence: count it apart and do not shrink it.
+                let timeout = kind.as_deref().is_some_and(|k| k.starts_with("timeout"));
                 {
                     let mut st = stats.lock().unwrap();
                     let e = st.entry(case.cmd).or_default();
                     e.0 += 1;
-                    e.1 += u64::from(kind.is_some());
+                    e.1 += u64::from(kind.is_some() && !timeout);
+                    e.2 += u64::from(timeout);
                 }
-                if let Some(kind) = kind {
+                if timeout {
+                    eprintln!("TIMEOUT case {i} [{}] {}", case.cmd, kind.unwrap());
+                } else if let Some(kind) = kind {
                     fails.fetch_add(1, Ordering::Relaxed);
                     let small = ctx.shrink(case, &kind, &tag);
                     let (_, oa, ob) = ctx.check(&small, &tag);
@@ -919,28 +927,45 @@ fn main() {
     let st = stats.into_inner().unwrap();
     let total: u64 = st.values().map(|v| v.0).sum();
     let bad: u64 = st.values().map(|v| v.1).sum();
+    let slow: u64 = st.values().map(|v| v.2).sum();
     println!(
         "difffuzz: {} vs {}, seed {seed}, {total} cases in {secs:.1}s",
         ctx.a.label(),
         ctx.b.label()
     );
-    println!("{:<10} {:>7} {:>9}", "command", "cases", "diverged");
+    println!(
+        "{:<10} {:>7} {:>9} {:>9} {:>9}",
+        "command", "cases", "identical", "diverged", "timeout"
+    );
+    let row = |k: &str, v: (u64, u64, u64)| {
+        println!(
+            "{k:<10} {:>7} {:>9} {:>9} {:>9}",
+            v.0,
+            v.0 - v.1 - v.2,
+            v.1,
+            v.2
+        );
+    };
     for (k, v) in &st {
-        println!("{k:<10} {:>7} {:>9}", v.0, v.1);
+        row(k, *v);
     }
-    println!("{:<10} {total:>7} {bad:>9}", "total");
+    row("total", (total, bad, slow));
     if let Some(j) = json {
         let mut s = format!(
-            "{{\n  \"a\": \"{}\",\n  \"b\": \"{}\",\n  \"seed\": {seed},\n  \"cases\": {total},\n  \"diverged\": {bad},\n  \"seconds\": {secs:.1},\n  \"by_command\": {{",
-            ctx.a.label(),
-            ctx.b.label()
+            "{{\n  \"a\": {},\n  \"b\": {},\n  \"seed\": {seed},\n  \"cases\": {total},\n  \"identical\": {},\n  \"diverged\": {bad},\n  \"timeouts\": {slow},\n  \"seconds\": {secs:.1},\n  \"by_command\": {{",
+            js(&ctx.a.label()),
+            js(&ctx.b.label()),
+            total - bad - slow
         );
         let parts: Vec<String> = st
             .iter()
             .map(|(k, v)| {
                 format!(
-                    "\n    \"{k}\": {{\"cases\": {}, \"diverged\": {}}}",
-                    v.0, v.1
+                    "\n    \"{k}\": {{\"cases\": {}, \"identical\": {}, \"diverged\": {}, \"timeouts\": {}}}",
+                    v.0,
+                    v.0 - v.1 - v.2,
+                    v.1,
+                    v.2
                 )
             })
             .collect();
