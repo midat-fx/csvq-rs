@@ -122,6 +122,9 @@ const VALUES: &[&[u8]] = &[
     b"\\",
     b"a.b",
     b"a\nb",
+    b"-1e400",
+    b"1e-400",
+    b"4e-320",
 ];
 
 const DELIMS: &[u8] = b",,,,;\t|";
@@ -183,7 +186,7 @@ const REGEXES: &[&str] = &[
 ];
 
 const DARGS: &[&str] = &[
-    ",", ";", "\\t", "|", "", "ab", "\\054", "x", "\\", "\\q", " ", "\\073",
+    ",", ";", "\\t", "|", "", "ab", "\\054", "x", "\\", "\\q", " ", "\\073", "\\n", "\"",
 ];
 
 fn value(r: &mut Rng) -> Vec<u8> {
@@ -810,6 +813,20 @@ fn save(dir: &Path, case: &Case, kind: &str, ctx: &Ctx, oa: &Outcome, ob: &Outco
     fs::write(dir.join("README.txt"), info).unwrap();
 }
 
+fn js(s: &str) -> String {
+    let mut o = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '"' => o.push_str("\\\""),
+            '\\' => o.push_str("\\\\"),
+            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
+            c => o.push(c),
+        }
+    }
+    o.push('"');
+    o
+}
+
 fn main() {
     let mut cases = 2000usize;
     let mut seed = 1u64;
@@ -930,7 +947,7 @@ fn main() {
         s.push_str(&parts.join(","));
         s.push_str("\n  },\n  \"findings\": [");
         let f = findings.into_inner().unwrap();
-        let fl: Vec<String> = f.iter().map(|l| format!("\n    {:?}", l)).collect();
+        let fl: Vec<String> = f.iter().map(|l| format!("\n    {}", js(l))).collect();
         s.push_str(&fl.join(","));
         s.push_str("\n  ]\n}\n");
         fs::write(j, s).unwrap();

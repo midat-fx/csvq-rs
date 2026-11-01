@@ -12,7 +12,7 @@ use std::io::{self, BufRead};
 pub fn detect_delim(line: &[u8]) -> u8 {
     let mut best = b',';
     let mut bestc = -1i64;
-    for c in [b',', b'\t', b';', b'|'] {
+    for c in *b",\t;|" {
         let n = line.iter().filter(|&&b| b == c).count() as i64;
         if n > bestc {
             bestc = n;

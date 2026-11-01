@@ -447,7 +447,7 @@ fn posix_class(s: &[u8]) -> Option<(Vec<u8>, usize)> {
         if s.starts_with(name) && s[name.len()..].starts_with(b":]") {
             // BWK writes the members into a C string, so a NUL member (cntrl)
             // would end the class early; start at 1 like it effectively does.
-            let members = (1..=255u8).filter(|b| pred(b)).collect();
+            let members = (1..=255u8).filter(pred).collect();
             return Some((members, 1 + name.len() + 2));
         }
     }

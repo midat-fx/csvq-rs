@@ -25,6 +25,8 @@ fn read_lines(r: impl BufRead) -> io::Result<Vec<Line>> {
 /// their difference, so NaN equals anything), otherwise as strings. Lines
 /// that are numerically equal but textually different ("1" vs "1.0") are
 /// therefore never reported as changed (legacy bug L3, preserved).
+// Not `x - y != 0.0`: that is true for NaN, and awk says NaN is equal.
+#[allow(clippy::double_comparisons)]
 fn differs(a: &Line, b: &Line) -> bool {
     match (a.1, b.1) {
         (Some(x), Some(y)) => x - y < 0.0 || x - y > 0.0,

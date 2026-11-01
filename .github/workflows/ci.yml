@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: fmt, clippy, cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  difffuzz:
+    # The oracle is BWK awk, which is the default awk on macOS runners.
+    name: differential fuzz vs legacy (macOS awk)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: awk --version
+      - run: make legacy-check
+      - run: cargo build --release
+      # A fresh seed per run widens coverage over time; the seed is in the log.
+      - run: ./target/release/difffuzz --cases 1500 --seed ${{ github.run_number }} --jobs 3
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-findings
+          path: fuzz-out/
