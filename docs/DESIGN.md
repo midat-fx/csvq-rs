@@ -114,7 +114,7 @@ Distinct counts, duplicate detection and diff are exact, so like the awk
 arrays they keep every distinct value or row in memory. Approximate
 structures (hash-only sets, HyperLogLog) would break equivalence on
 collisions. That bounds which commands can run on 10 GB of high-cardinality
-data on a laptop; the 10 GB benchmark therefore only covers commands whose
+data on a laptop; the largest benchmark (3 GiB) therefore only covers commands whose
 memory does not grow with the input.
 
 ## 10. Dependencies
