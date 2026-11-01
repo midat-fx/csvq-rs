@@ -1,0 +1,10 @@
+difffuzz: legacy(/usr/bin/awk) vs legacy(gawk), seed 2026, 5000 cases in 128.8s
+command      cases identical  diverged   timeout
+audit          769       762         7         0
+cli            407       407         0         0
+dedupe         799       788        11         0
+diff           738       727        11         0
+normalize      392       392         0         0
+stats         1148      1133        15         0
+validate       747       573       174         0
+total         5000      4782       218         0

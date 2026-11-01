@@ -1,0 +1,4 @@
+awk (a): awk version 20200816
+gawk: GNU Awk 5.4.1, API 4.1, PMA Avon 8-g1, (GNU MPFR 4.2.2, GNU MP 6.3.0)
+mawk: mawk 1.3.4 20260302
+command: make fuzz-cross (5,000 cases each, seed 2026, --no-shrink)
