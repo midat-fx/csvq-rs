@@ -1,4 +1,4 @@
-# difffuzz after the diff change: old binary (a65844f) vs new, then legacy vs new
+# difffuzz after the diff change: old binary (cf6efdb) vs new, then legacy vs new
 ... 100000 cases
 difffuzz: rust vs rust, seed 11, 100000 cases in 136.5s
 command      cases identical  diverged   timeout
