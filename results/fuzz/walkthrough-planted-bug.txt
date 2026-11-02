@@ -1,0 +1,75 @@
+# planted line in src/main.rs:
++    if std::fs::read("in.csv").is_ok_and(|d| d.contains(&b'\r')) { eprint!("X"); }
+awk version 20200816
+$ ./target/release/difffuzz --cases 300 --seed 1 --jobs 1 --max-fail 1
+DIVERGENCE case 0 [stats] stderr: csvq stats in.csv -> fuzz-out/seed1-case0
+difffuzz: legacy(/usr/bin/awk) vs rust, seed 1, 1 cases in 0.7s
+command      cases identical  diverged   timeout
+stats            1         0         1         0
+total            1         0         1         0
+[exit 1]
+$ cat fuzz-out/seed1-case0/README.txt
+divergence: stderr
+command: csvq stats in.csv
+
+== legacy(/usr/bin/awk): exit Some(0)
+-- stdout
+CSV COLUMN STATISTICS
+=====================
+File: in.csv
+Rows: 0 (excluding header)
+
+Column 1: 
+  type:      empty
+  non-null:  0
+  nulls:     0 (0.0%)
+  distinct:  0
+
+-- stderr
+
+
+== rust: exit Some(0)
+-- stdout
+CSV COLUMN STATISTICS
+=====================
+File: in.csv
+Rows: 0 (excluding header)
+
+Column 1: 
+  type:      empty
+  non-null:  0
+  nulls:     0 (0.0%)
+  distinct:  0
+
+-- stderr
+X
+$ od -c fuzz-out/seed1-case0/input/in.csv
+0000000   \r                                                            
+0000001
+$ tests/freeze.sh p6-scratch-cr-on-stderr fuzz-out/seed1-case0/input stats in.csv
+froze p6-scratch-cr-on-stderr (exit 0)
+[exit 0]
+$ cargo test -j4 --test regressions
+2 of 29 cases differ:
+l14-dedupe-drops-crlf: stderr
+p6-scratch-cr-on-stderr: stderr
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.54s
+error: test failed, to rerun pass `--test regressions`
+$ git checkout src/main.rs
+Updated 1 path from the index
+[exit 0]
+$ cargo test -j4 --test regressions
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.52s
+$ ./target/release/difffuzz --cases 300 --seed 1 --jobs 1 --max-fail 1
+difffuzz: legacy(/usr/bin/awk) vs rust, seed 1, 300 cases in 13.4s
+command      cases identical  diverged   timeout
+audit           46        46         0         0
+cli             29        29         0         0
+dedupe          43        43         0         0
+diff            42        42         0         0
+normalize       26        26         0         0
+stats           69        69         0         0
+validate        45        45         0         0
+total          300       300         0         0
+[exit 0]

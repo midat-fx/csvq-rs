@@ -56,6 +56,8 @@ csvq audit data/ -o reports --strict
 3. **Frozen cases.** Every reproducer, plus a probe for each known legacy
    quirk, is stored with the legacy output (`tests/cases/`, made by
    `tests/freeze.sh`) and replayed by `cargo test` without needing awk.
+   [docs/FUZZING.md](docs/FUZZING.md) walks through getting from a red fuzz
+   run to a fixed, frozen case.
 
 The legacy code under `legacy/` is an unmodified copy of the original at
 commit `85721ad`, checksummed by `make legacy-check`.
