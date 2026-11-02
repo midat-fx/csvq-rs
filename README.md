@@ -48,7 +48,11 @@ csvq audit data/ -o reports --strict
    endings, a BOM, empty and ragged rows, 100 KB fields, numeric look-alikes
    (`0x1A`, `-0`, `1e400`, `nan`), invalid UTF-8, awk's SUBSEP byte, broken
    schemas and broken command lines. A mismatch is shrunk to a minimal
-   reproducer.
+   reproducer. The fuzzer has its own test (`tests/difffuzz_selftest.rs`).
+   Run on two copies of the same binary, it must report nothing. Run on a
+   planted bug, a wrapper that adds one byte of output whenever an input
+   contains a CR, it must report the bug and shrink the case to at most
+   16 bytes that still contain the CR.
 3. **Frozen cases.** Every reproducer, plus a probe for each known legacy
    quirk, is stored with the legacy output (`tests/cases/`, made by
    `tests/freeze.sh`) and replayed by `cargo test` without needing awk.
@@ -156,6 +160,7 @@ src/{audit,stats,validate,diff,dedupe}.rs   one module per legacy awk program
 src/bin/difffuzz.rs  the differential fuzzer
 tests/golden.rs      the legacy golden suite
 tests/regressions.rs replays tests/cases/*
+tests/difffuzz_selftest.rs  checks that the fuzzer finds and shrinks a planted bug
 legacy/              the original scripts (oracle), unmodified
 bench/               benchmark harness
 results/             raw fuzz and benchmark output behind every number above
