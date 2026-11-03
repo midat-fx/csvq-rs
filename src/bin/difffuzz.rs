@@ -455,7 +455,7 @@ fn gen_case(r: &mut Rng) -> Case {
                 c.files.push(("d/b.csv".into(), csv(r, &hdr)));
                 c.files.push(("d/a.csv".into(), csv(r, &hdr)));
                 c.files.push(("d/skip.txt".into(), b"x\n".to_vec()));
-                c.args.push(s(r.pick(&["d", "d/"])));
+                c.args.push(s(r.pick::<&str>(&["d", "d/"])));
             }
             if r.chance(0.2) {
                 c.files.push(("empty.csv".into(), Vec::new()));
@@ -546,7 +546,7 @@ fn gen_case(r: &mut Rng) -> Case {
                 "outdir",
             ];
             let n = r.below(6);
-            c.args = (0..n).map(|_| s(r.pick(pool))).collect();
+            c.args = (0..n).map(|_| s(r.pick::<&str>(pool))).collect();
             if let Some(first) = c.args.first() {
                 if first.as_slice() == b"normalize"
                     && c.args.iter().any(|a| a.as_slice() == b"--in-place")
