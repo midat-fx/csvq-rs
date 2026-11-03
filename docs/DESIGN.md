@@ -124,6 +124,14 @@ would help `stats` and `audit`, but the port is already one to two orders of
 magnitude faster than the original, and every dependency is something to
 audit.
 
+CI builds with `--locked`, so it tests the dependency versions in the
+committed `Cargo.lock` and not whatever resolves that day. Its actions are
+pinned to commit SHAs, because a tag can be moved to different code. A
+separate job runs the tests on Rust 1.82, the `rust-version` in `Cargo.toml`.
+The first time I ran that check, `difffuzz` did not compile on 1.82: the older
+compiler could not infer `r.pick(..)` as `&&str` inside a `&str` closure. So
+the claim had never been true until the job existed.
+
 ## 11. What would change after parity
 
 The legacy bugs in DIVERGENCES.md are the backlog for a v2. The ones I would

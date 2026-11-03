@@ -8,29 +8,44 @@ on:
 permissions:
   contents: read
 
+# Third-party actions are pinned to full commit SHAs; the comment is the tag
+# the SHA was taken from.
 jobs:
   test:
     name: fmt, clippy, cargo test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: cargo fmt --check
-      - run: cargo clippy --all-targets -- -D warnings
-      - run: cargo test
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+
+  msrv:
+    # rust-version in Cargo.toml; this job is what keeps it true.
+    name: cargo test on Rust 1.82
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: dtolnay/rust-toolchain@40a9285135951116a4a08e10a723a42b12d721d3 # 1.82
+      - run: cargo build --locked
+      - run: cargo test --locked
 
   difffuzz:
     # The oracle is BWK awk, which is the default awk on macOS runners.
     name: differential fuzz vs legacy (macOS awk)
     runs-on: macos-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - run: awk --version
       - run: make legacy-check
-      - run: cargo build --release
+      - run: cargo build --locked --release
       # A fresh seed per run widens coverage over time; the seed is in the log.
       - run: ./target/release/difffuzz --cases 1500 --seed ${{ github.run_number }} --jobs 3
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: fuzz-findings
           path: fuzz-out/
