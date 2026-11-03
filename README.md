@@ -168,6 +168,10 @@ bench/               benchmark harness
 results/             raw fuzz and benchmark output behind every number above
 ```
 
+## How it was built
+
+The code, tests and this README were written by Claude Code, Anthropic's AI coding agent, working to Midat's problem statement: Midat chose the problem, set the requirements, reviewed the work and accepted it. Every number above comes from the files in this repository and the commands that produced them.
+
 ## License
 
 MIT, like the original.
