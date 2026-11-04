@@ -119,10 +119,15 @@ memory does not grow with the input.
 
 ## 10. Dependencies
 
-One: `regex`. Hashing uses the standard library's SipHash. A faster hasher
-would help `stats` and `audit`, but the port is already one to two orders of
-magnitude faster than the original, and every dependency is something to
-audit.
+One: `regex`. Hashing mostly uses the standard library's SipHash. A faster
+hasher would help `stats` and `audit`, but the port is already one to two
+orders of magnitude faster than the original, and every dependency is
+something to audit. `diff` is the exception: its OLD-row index hashes keys
+with a dozen-line multiply-xorshift function in `src/diff.rs`, because it
+stores only the hash and compares the key bytes itself on every hit. A weak
+or colliding hash can only make it slower, never wrong, and the inputs are
+local files, so SipHash's protection against crafted collisions buys
+nothing there.
 
 CI builds with `--locked`, so it tests the dependency versions in the
 committed `Cargo.lock` and not whatever resolves that day. Its actions are

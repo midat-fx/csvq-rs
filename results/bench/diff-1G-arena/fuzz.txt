@@ -1,0 +1,12 @@
+# difffuzz after the arena change to src/diff.rs (uncommitted, on top of 66d1694): old binary vs new, then legacy vs new. load1 at start 10.42
+$ difffuzz --cases 100000 --seed 21 --jobs 4 --only diff --a rust:<csvq built from 66d1694>
+difffuzz: rust vs rust, seed 21, 100000 cases in 196.5s
+command      cases identical  diverged   timeout
+diff        100000    100000         0         0
+total       100000    100000         0         0
+$ difffuzz --cases 6000 --seed 22 --jobs 4 --only diff --a legacy:/usr/bin/awk
+DIVERGENCE case 26881 [diff] stdout: csvq diff old.csv new.csv --key x,y -> fuzz-out/seed22-case26881
+difffuzz: legacy(/usr/bin/awk) vs rust, seed 22, 6000 cases in 62.9s
+command      cases identical  diverged   timeout
+diff          6000      5999         1         0
+total         6000      5999         1         0

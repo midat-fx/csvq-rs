@@ -138,7 +138,10 @@ again into the key map. Now NEW is streamed and OLD lines are moved into the
 map. In a before/after run on the same 1 GiB data
 (`results/bench/diff-1G/`), the median went from 85.7 s to 48.5 s, user time
 from 33.4 s to 21.7 s and sys time from 27.2 s to 8.8 s, with the same
-output. The load was higher during the after run. `stats` keeps every
+output. The load was higher during the after run. A second change keeps OLD
+rows in one byte arena (`results/bench/diff-1G-arena/`): at a load of 3–5,
+peak RSS fell from 5.05–5.68 GiB to 2.80–4.18 GiB, with the same output and
+the same time (15.75 s vs 15.44 s). `stats` keeps every
 distinct value per column, as the awk arrays do, and used about twice awk's memory on this data.
 
 **Long multi-line records** (`results/quadratic/times.txt`). The input is the
