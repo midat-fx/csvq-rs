@@ -4,6 +4,7 @@ JOBS  ?= 4
 SEED  ?= 1
 CASES ?= 1500
 AWK   ?= /usr/bin/awk
+ONLY  ?=
 
 .PHONY: test build fuzz fuzz-smoke fuzz-full fuzz-cross legacy-check bench lint clean
 
@@ -17,7 +18,8 @@ build:
 
 ## Differential fuzzing against the legacy script (needs bash + BWK awk).
 fuzz-smoke: build
-	./target/release/difffuzz --cases $(CASES) --seed $(SEED) --jobs $(JOBS) --a legacy:$(AWK)
+	./target/release/difffuzz --cases $(CASES) --seed $(SEED) --jobs $(JOBS) --a legacy:$(AWK) \
+	  $(if $(ONLY),--only $(ONLY))
 
 fuzz: fuzz-smoke
 

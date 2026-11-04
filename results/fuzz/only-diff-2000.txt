@@ -1,0 +1,9 @@
+# 2026-11-04T10:46:31Z commit 343ce45 + --only change (uncommitted); load1 23.44
+$ ./target/release/difffuzz --cases 2000 --seed 2026 --jobs 4 --only diff --a legacy:/usr/bin/awk
+... 1000 cases
+... 2000 cases
+difffuzz: legacy(/usr/bin/awk) vs rust, seed 2026, 2000 cases in 53.0s
+command      cases identical  diverged   timeout
+diff          2000      2000         0         0
+total         2000      2000         0         0
+[exit 0]

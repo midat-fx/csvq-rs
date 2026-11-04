@@ -16,6 +16,7 @@ other design decisions, are in [docs/DESIGN.md](docs/DESIGN.md).
 ```
 make test        # unit + golden + frozen-case tests, then a 1,500-case fuzz run
 make fuzz-full   # 50,000 fuzz cases, writes results/fuzz/
+make fuzz-smoke ONLY=diff CASES=2000   # only diff cases (any of audit,cli,dedupe,diff,normalize,stats,validate)
 make bench       # SIZE=1G by default, writes results/bench/
 ```
 

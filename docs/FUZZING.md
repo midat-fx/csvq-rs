@@ -104,7 +104,10 @@ reproduce the bug and the fix would prove nothing. Other cases on the list are
 fine if the same bug explains them.
 
 Then I fix `src/`, run the same test until it passes, and rerun the original
-fuzz command with the same seed. A legacy-bug case fails the same way until the
+fuzz command with the same seed. To give the touched command more coverage, I then run
+it alone: `--only diff` (or `make fuzz-smoke ONLY=diff CASES=2000`) generates
+the same cases as a full run but skips the other commands. A `seedS-caseN` name
+keeps its meaning. A legacy-bug case fails the same way until the
 port reproduces the bug. Everything goes into one commit: the fix, the case and
 the `DIVERGENCES.md` row. `fuzz-out/` is ignored by git.
 

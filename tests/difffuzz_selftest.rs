@@ -36,6 +36,31 @@ fn input_files(dir: &Path, out: &mut Vec<Vec<u8>>) {
     }
 }
 
+/// A mutant that prints one extra byte when any file in its working
+/// directory contains a CR, the kind of input-dependent slip a port makes.
+/// Returns the `--a` spec for it.
+fn mutant(d: &Path) -> String {
+    let m = d.join("mutant.sh");
+    fs::write(
+        &m,
+        format!(
+            "#!/bin/sh\n\"{CSVQ}\" \"$@\"\ns=$?\ngrep -rqF \"$(printf '\\r')\" . && printf X\nexit $s\n"
+        ),
+    )
+    .unwrap();
+    fs::set_permissions(&m, fs::Permissions::from_mode(0o755)).unwrap();
+    format!("rust:{}", m.display())
+}
+
+/// "case N [cmd]" for every DIVERGENCE line on stderr.
+fn divergences(o: &Output) -> Vec<String> {
+    String::from_utf8_lossy(&o.stderr)
+        .lines()
+        .filter_map(|l| l.strip_prefix("DIVERGENCE "))
+        .map(|l| l.split(']').next().unwrap().to_string() + "]")
+        .collect()
+}
+
 #[test]
 fn same_binary_never_diverges() {
     let d = scratch("same");
@@ -57,24 +82,8 @@ fn same_binary_never_diverges() {
 #[test]
 fn planted_bug_is_found_shrunk_and_saved() {
     let d = scratch("mutant");
-    // A mutant that prints one extra byte when any file in its working
-    // directory contains a CR, the kind of input-dependent slip a port makes.
-    let mutant = d.join("mutant.sh");
-    fs::write(
-        &mutant,
-        format!(
-            "#!/bin/sh\n\"{CSVQ}\" \"$@\"\ns=$?\ngrep -rqF \"$(printf '\\r')\" . && printf X\nexit $s\n"
-        ),
-    )
-    .unwrap();
-    fs::set_permissions(&mutant, fs::Permissions::from_mode(0o755)).unwrap();
-
     let out = d.join("out");
-    let o = difffuzz(
-        &format!("rust:{}", mutant.display()),
-        &out,
-        &["--max-fail", "3"],
-    );
+    let o = difffuzz(&mutant(&d), &out, &["--max-fail", "3"]);
     let report = String::from_utf8_lossy(&o.stdout);
     assert_eq!(
         o.status.code(),
@@ -100,5 +109,61 @@ fn planted_bug_is_found_shrunk_and_saved() {
             "{total} input bytes left after shrinking: {readme}"
         );
     }
+    let _ = fs::remove_dir_all(&d);
+}
+
+#[test]
+fn only_runs_the_selected_commands_and_keeps_case_numbers() {
+    let d = scratch("only");
+    // The table has one row for the selected command, and --cases counts
+    // cases that ran, not cases drawn.
+    let o = difffuzz(
+        &format!("rust:{CSVQ}"),
+        &d.join("out"),
+        &["--cases", "50", "--only", "stats"],
+    );
+    let report = String::from_utf8_lossy(&o.stdout);
+    assert!(o.status.success(), "{report}");
+    let rows: Vec<Vec<&str>> = report
+        .lines()
+        .skip_while(|l| !l.starts_with("command"))
+        .skip(1)
+        .map(|l| l.split_whitespace().collect())
+        .collect();
+    assert_eq!(
+        rows,
+        [
+            ["stats", "50", "50", "0", "0"],
+            ["total", "50", "50", "0", "0"]
+        ],
+        "{report}"
+    );
+
+    // seedS-caseN names the same case with or without --only: the first
+    // dedupe case the mutant trips on keeps its number.
+    let m = mutant(&d);
+    let one = ["--jobs", "1", "--no-shrink"];
+    let all = difffuzz(
+        &m,
+        &d.join("all"),
+        &[&one[..], &["--max-fail", "3"]].concat(),
+    );
+    let first_dedupe = divergences(&all)
+        .into_iter()
+        .find(|c| c.ends_with("[dedupe]"))
+        .expect("no dedupe divergence in the first cases of seed 1");
+    let only = difffuzz(
+        &m,
+        &d.join("only"),
+        &[&one[..], &["--max-fail", "1", "--only", "dedupe"]].concat(),
+    );
+    assert_eq!(divergences(&only), [first_dedupe]);
+
+    let bad = Command::new(DIFFFUZZ)
+        .args(["--only", "stats,frob"])
+        .output()
+        .unwrap();
+    assert_eq!(bad.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&bad.stderr).contains("unknown command 'frob'"));
     let _ = fs::remove_dir_all(&d);
 }

@@ -829,6 +829,17 @@ fn js(s: &str) -> String {
     o
 }
 
+/// The buckets `gen_case` sets as `Case::cmd`, for `--only`.
+const COMMANDS: [&str; 7] = [
+    "audit",
+    "cli",
+    "dedupe",
+    "diff",
+    "normalize",
+    "stats",
+    "validate",
+];
+
 fn main() {
     let mut cases = 2000usize;
     let mut seed = 1u64;
@@ -841,6 +852,7 @@ fn main() {
     let mut out = root.join("fuzz-out");
     let mut json: Option<PathBuf> = None;
     let mut no_shrink = false;
+    let mut only: Option<Vec<String>> = None;
     let argv: Vec<String> = std::env::args().skip(1).collect();
     let mut it = argv.iter();
     while let Some(k) = it.next() {
@@ -859,6 +871,19 @@ fn main() {
             "--out" => out = PathBuf::from(v()),
             "--json" => json = Some(PathBuf::from(v())),
             "--no-shrink" => no_shrink = true,
+            "--only" => {
+                let list: Vec<String> = v().split(',').map(str::to_string).collect();
+                for c in &list {
+                    if !COMMANDS.contains(&c.as_str()) {
+                        eprintln!(
+                            "difffuzz: unknown command '{c}' in --only (one of: {})",
+                            COMMANDS.join(" ")
+                        );
+                        std::process::exit(2);
+                    }
+                }
+                only = Some(list);
+            }
             _ => panic!("unknown argument {k}"),
         }
     }
@@ -870,7 +895,12 @@ fn main() {
         work: work.clone(),
     };
 
-    let next = AtomicUsize::new(0);
+    // (next case index to draw, cases handed out). Drawing happens under the
+    // lock, so with --only the cases that run are exactly the first `cases`
+    // selected indices, whatever the number of jobs. Case i is generated from
+    // (seed, i) alone, so seedS-caseN means the same input with or without
+    // --only.
+    let next = Mutex::new((0usize, 0usize));
     let fails = AtomicUsize::new(0);
     // command -> (cases, diverged, timed out)
     let stats: Mutex<BTreeMap<&'static str, (u64, u64, u64)>> = Mutex::new(BTreeMap::new());
@@ -878,16 +908,32 @@ fn main() {
     let start = Instant::now();
     std::thread::scope(|s| {
         for w in 0..jobs {
-            let (ctx, next, fails, stats, findings, out) =
-                (&ctx, &next, &fails, &stats, &findings, &out);
+            let (ctx, next, fails, stats, findings, out, only) =
+                (&ctx, &next, &fails, &stats, &findings, &out, &only);
             s.spawn(move || loop {
-                let i = next.fetch_add(1, Ordering::Relaxed);
-                if i >= cases || fails.load(Ordering::Relaxed) >= max_fail {
+                if fails.load(Ordering::Relaxed) >= max_fail {
                     break;
                 }
-                let mut r = Rng(seed.wrapping_mul(0x2545_F491_4F6C_DD1D) ^ (i as u64));
-                r.next();
-                let case = gen_case(&mut r);
+                let (i, case, n) = {
+                    let mut nx = next.lock().unwrap();
+                    if nx.1 >= cases {
+                        break;
+                    }
+                    loop {
+                        let i = nx.0;
+                        nx.0 += 1;
+                        let mut r = Rng(seed.wrapping_mul(0x2545_F491_4F6C_DD1D) ^ (i as u64));
+                        r.next();
+                        let case = gen_case(&mut r);
+                        if only
+                            .as_ref()
+                            .is_none_or(|o| o.iter().any(|c| c == case.cmd))
+                        {
+                            nx.1 += 1;
+                            break (i, case, nx.1);
+                        }
+                    }
+                };
                 let tag = format!("w{w}");
                 let (kind, _, _) = ctx.check(&case, &tag);
                 // A run that hits the time limit says nothing about
@@ -922,8 +968,8 @@ fn main() {
                     eprintln!("DIVERGENCE {line}");
                     findings.lock().unwrap().push(line);
                 }
-                if (i + 1) % 1000 == 0 {
-                    eprintln!("... {} cases", i + 1);
+                if n % 1000 == 0 {
+                    eprintln!("... {n} cases");
                 }
             });
         }
