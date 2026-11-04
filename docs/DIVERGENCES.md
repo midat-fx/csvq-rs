@@ -17,6 +17,7 @@ the mismatches the fuzzer found after that, in the order it found them.
 | P3 | schema `max:-0` | `pend_max + 0` turns `-0` into `+0`, so the message says `max 0`, not `max -0` | `p3-minus-zero-plus-zero-prints-0` |
 | P4 | schema `regex:[z-a]` | in BWK awk an empty bracket class matches the empty string, not nothing | `p4-empty-bracket-matches-empty` |
 | P5 | diff of `1` vs `1.0`, or anything vs `nan` | whole lines compare as numbers when both look numeric (see L3); the port compared bytes | `p5-l3-diff-strnum-line-compare` |
+| P6 | diff of `1` vs `1\r ` (a CR that is not at the end of the line, so `sub(/\r$/)` leaves it) | BWK's `is_number` lets a CR follow the number, so `1\r ` is a strnum equal to `1`; the port allowed only space, tab and newline. A 6,000-case `--only diff` run found it on Nov 4, after 50,000 general cases had missed it | `p6-strnum-allows-trailing-cr` |
 
 ## Legacy bugs (preserved for equivalence)
 

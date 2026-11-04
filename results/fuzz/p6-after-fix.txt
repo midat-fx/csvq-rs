@@ -1,0 +1,6 @@
+# seed 22 --only diff again, with the P6 fix to is_number (uncommitted, on top of 70aad21). load1 at start 2.59
+$ difffuzz --cases 6000 --seed 22 --jobs 4 --only diff --a legacy:/usr/bin/awk
+difffuzz: legacy(/usr/bin/awk) vs rust, seed 22, 6000 cases in 113.4s
+command      cases identical  diverged   timeout
+diff          6000      6000         0         0
+total         6000      6000         0         0

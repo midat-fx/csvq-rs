@@ -63,8 +63,10 @@ pub fn atof(s: &[u8]) -> f64 {
 }
 
 /// BWK `is_number`: does a string read from input count as numeric (a
-/// "strnum")? strtod must consume something, only blanks may follow, and the
-/// result may be neither +HUGE_VAL nor out of range (ERANGE).
+/// "strnum")? strtod must consume something, only space, tab, newline or CR
+/// may follow, and the result may be neither +HUGE_VAL nor out of range
+/// (ERANGE). The CR was found by the fuzzer (P6): `1\r ` is a number to
+/// awk 20200816, while `1\v` and `1\f` are not.
 pub fn is_number(s: &[u8]) -> Option<f64> {
     let (v, n, erange) = strtod(s);
     let ok = n > 0
@@ -72,7 +74,7 @@ pub fn is_number(s: &[u8]) -> Option<f64> {
         && !erange
         && s[n..]
             .iter()
-            .all(|&b| b == b' ' || b == b'\t' || b == b'\n');
+            .all(|&b| matches!(b, b' ' | b'\t' | b'\n' | b'\r'));
     ok.then_some(v)
 }
 
@@ -497,6 +499,9 @@ mod tests {
         assert_eq!(is_number(b"1e-320"), None);
         assert_eq!(is_number(b"0e-999"), Some(0.0));
         assert_eq!(is_number(b"1e5x"), None);
+        assert_eq!(is_number(b"1\r "), Some(1.0));
+        assert_eq!(is_number(b"1\x0b"), None);
+        assert_eq!(is_number(b"1\x0c"), None);
         assert_eq!(is_number(b""), None);
         assert_eq!(is_number(b"."), None);
     }

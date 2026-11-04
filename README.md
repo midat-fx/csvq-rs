@@ -82,7 +82,8 @@ Per command in the 50,000-case run: audit 7,766, cli 3,891, dedupe 7,679,
 diff 7,611, normalize 3,832, stats 11,665, validate 7,556.
 
 Before that run, the fuzzer found five bugs in the port that the legacy
-golden suite had not caught (P1–P5). Along the way it also found legacy bugs
+golden suite had not caught (P1–P5). A later `--only diff` run found a sixth
+(P6, `results/bench/diff-1G-arena/fuzz.txt`). Along the way it also found legacy bugs
 that the port reproduces on purpose (L1–L19), and five deliberate
 differences outside the output contract (D1–D5).
 All are listed with reproducers in
