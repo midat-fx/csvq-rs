@@ -100,21 +100,21 @@ one awk.
 Generated data from the legacy benchmark generator (`legacy/bench/gen.awk`,
 5 columns, about 40 bytes per row). Legacy was run once per command; Rust
 ran four times, and the table shows the median of the last three. The
-machine was shared with other work: the 1-minute load average ranged from 8
-to 116 during the 1 GiB run and from 30 to 51 during the 3 GiB run (it is
+machine was shared with other work: the 1-minute load average ranged from 4
+to 72 during the 1 GiB run and from 30 to 51 during the 3 GiB run (it is
 logged next to every row in `runs.tsv`), so treat the ratios as rough.
 
 **1.06 GiB, 26.8 M rows** (`results/bench/1G/`):
 
 | command | legacy (s) | Rust (s) | speedup | legacy peak RSS | Rust peak RSS | same output |
 |---|---:|---:|---:|---:|---:|---|
-| normalize | 39.4 | 0.61 | 65x | 2 MiB | 3 MiB | yes |
-| stats | 1861.5 | 24.66 | 75x | 1594 MiB | 3310 MiB | yes |
-| audit | 786.2 | 29.20 | 27x | 3168 MiB | 2038 MiB | yes |
-| validate | 680.6 | 29.40 | 23x | 2509 MiB | 1411 MiB | yes |
-| dedupe | 751.3 | 26.18 | 29x | 2923 MiB | 1781 MiB | yes |
-| dedupe --key city | 467.3 | 2.61 | 179x | 2 MiB | 3 MiB | yes |
-| diff --key id | 1022.1 | 271.95 | 4x | 2610 MiB | 3307 MiB | yes |
+| normalize | 38.8 | 0.54 | 72x | 2 MiB | 3 MiB | yes |
+| stats | 567.1 | 19.40 | 29x | 9134 MiB | 4033 MiB | yes |
+| audit | 480.1 | 7.29 | 66x | 3378 MiB | 2838 MiB | yes |
+| validate | 563.4 | 20.03 | 28x | 2953 MiB | 2015 MiB | yes |
+| dedupe | 447.2 | 8.37 | 53x | 3384 MiB | 2326 MiB | yes |
+| dedupe --key city | 426.6 | 2.69 | 159x | 2 MiB | 3 MiB | yes |
+| diff --key id | 894.6 | 23.32 | 38x | 5743 MiB | 2427 MiB | yes |
 
 **3.21 GiB, 80.5 M rows**, for the two commands whose memory does not grow
 with the input (`results/bench/3G/`):
@@ -127,12 +127,13 @@ with the input (`results/bench/3G/`):
 A 10 GB run was planned but not done: the machine had 11 GiB of
 free disk at the time, and `bench/run.sh` needs the file plus 4 GiB of
 headroom. From 1 GiB to 3 GiB, peak memory of both commands stayed at
-3 MiB. For three times the data, Rust time grew 2.8x for `dedupe --key` and
-5.9x for `normalize` (0.61 s to 3.57 s, a run short enough to be sensitive to
-load and page cache). The other five commands already peaked at 1.4–3.2 GiB of RSS at 1 GiB, and that
+3 MiB. Against the first 1 GiB run, for three times the data, Rust time grew
+2.8x for `dedupe --key` and 5.9x for `normalize` (0.61 s to 3.57 s, a run short
+enough to be sensitive to load and page cache). The other five commands already peaked at 2.0–8.9 GiB of RSS at 1 GiB, and that
 grows with the data in both implementations (DESIGN.md §9).
 
-`diff` gained least in this run. Its Rust time was mostly kernel time
+`diff` gained least in the first 1 GiB run, at 4x (commit e1b1d5f, raw data in
+`git show e850094:results/bench/1G/runs.tsv`). Its Rust time was mostly kernel time
 (sys 98–190 s, user 40–43 s), and wall time varied from 224 to 368 s between
 runs. It used to read both files whole into memory, then copy every OLD line
 again into the key map. Now NEW is streamed and OLD lines are moved into the
@@ -142,8 +143,11 @@ from 33.4 s to 21.7 s and sys time from 27.2 s to 8.8 s, with the same
 output. The load was higher during the after run. A second change keeps OLD
 rows in one byte arena (`results/bench/diff-1G-arena/`): at a load of 3–5,
 peak RSS fell from 5.05–5.68 GiB to 2.80–4.18 GiB, with the same output and
-the same time (15.75 s vs 15.44 s). `stats` keeps every
-distinct value per column, as the awk arrays do, and used about twice awk's memory on this data.
+the same time (15.75 s vs 15.44 s). In the full run above, with both changes,
+`diff` took 23.32 s (sys 1.2 s) against legacy's 894.6 s. `stats` keeps every
+distinct value per column, as the awk arrays do. Its peak RSS is the least
+stable number here: in the first 1 GiB run legacy peaked at 1594 MiB and Rust
+at 3310 MiB, in this one 9134 MiB and 4033 MiB, on the same data.
 
 **Long multi-line records** (`results/quadratic/times.txt`). The input is the
 frozen case `edge-100k-field-audit`: 228 KB and 28,654 physical lines, but
